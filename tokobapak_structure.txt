@@ -1,0 +1,1124 @@
+# TokoBapak - E-commerce Platform
+# Project Structure (Production-Ready)
+# Last Updated: January 2026
+
+tokobapak/
+├── README.md                           # Project overview & quick start
+├── CONTRIBUTING.md                     # Contribution guidelines
+├── LICENSE
+├── CHANGELOG.md                        # Version history
+├── CODE_OF_CONDUCT.md
+│
+├── docker-compose.yml                  # Development environment
+├── docker-compose.dev.yml              # Development overrides
+├── docker-compose.prod.yml             # Production configuration
+├── docker-compose.test.yml             # Testing environment
+│
+├── .gitignore
+├── .gitattributes
+├── .editorconfig                       # Editor configuration
+├── .env.example                        # Environment template
+├── .nvmrc                              # Node version specification
+│
+├── Makefile                            # Common development commands
+├── Taskfile.yml                        # Task runner (alternative to Make)
+│
+# ═══════════════════════════════════════════════════════════════════════════
+# DOCUMENTATION
+# ═══════════════════════════════════════════════════════════════════════════
+├── docs/
+│   ├── README.md                       # Documentation index
+│   │
+│   ├── architecture/
+│   │   ├── ARCHITECTURE.md             # System architecture overview
+│   │   ├── ADR/                        # Architecture Decision Records
+│   │   │   ├── 001-microservices.md
+│   │   │   ├── 002-event-driven.md
+│   │   │   └── template.md
+│   │   ├── diagrams/
+│   │   │   ├── system-context.png
+│   │   │   ├── container-diagram.png
+│   │   │   ├── component-diagram.png
+│   │   │   └── sequence-diagrams/
+│   │   └── C4-models/
+│   │       └── *.puml
+│   │
+│   ├── api/
+│   │   ├── API_DOCUMENTATION.md        # API overview
+│   │   ├── openapi/
+│   │   │   ├── user-service.yaml
+│   │   │   ├── product-service.yaml
+│   │   │   ├── order-service.yaml
+│   │   │   └── payment-service.yaml
+│   │   └── postman/
+│   │       ├── tokobapak-collection.json
+│   │       └── environments/
+│   │           ├── local.json
+│   │           ├── staging.json
+│   │           └── production.json
+│   │
+│   ├── database/
+│   │   ├── DATABASE_SCHEMA.md          # Database documentation
+│   │   ├── ERD/
+│   │   │   ├── user-service-erd.png
+│   │   │   ├── product-service-erd.png
+│   │   │   └── order-service-erd.png
+│   │   └── migrations.md
+│   │
+│   ├── deployment/
+│   │   ├── DEPLOYMENT.md               # Deployment guide
+│   │   ├── RUNBOOK.md                  # Operations runbook
+│   │   ├── DISASTER_RECOVERY.md
+│   │   └── environments/
+│   │       ├── development.md
+│   │       ├── staging.md
+│   │       └── production.md
+│   │
+│   ├── development/
+│   │   ├── DEVELOPMENT_GUIDE.md        # Developer onboarding
+│   │   ├── CODING_STANDARDS.md
+│   │   ├── GIT_WORKFLOW.md
+│   │   ├── TESTING_GUIDE.md
+│   │   └── LOCAL_SETUP.md
+│   │
+│   └── security/
+│       ├── SECURITY.md
+│       └── THREAT_MODEL.md
+│
+# ═══════════════════════════════════════════════════════════════════════════
+# FRONTEND APPLICATIONS
+# ═══════════════════════════════════════════════════════════════════════════
+├── frontend/
+│   ├── prd.md                          # Frontend PRD
+│   │
+│   ├── web/                            # Customer-facing web app
+│   │   ├── package.json
+│   │   ├── bun.lock
+│   │   ├── next.config.ts
+│   │   ├── tsconfig.json
+│   │   ├── tailwind.config.ts
+│   │   ├── postcss.config.mjs
+│   │   ├── eslint.config.mjs
+│   │   ├── prettier.config.js
+│   │   ├── vitest.config.ts
+│   │   ├── playwright.config.ts
+│   │   ├── components.json             # shadcn/ui config
+│   │   ├── .env.local.example
+│   │   ├── .gitignore
+│   │   ├── README.md
+│   │   ├── Dockerfile
+│   │   ├── Dockerfile.dev
+│   │   │
+│   │   ├── public/
+│   │   │   ├── images/
+│   │   │   ├── icons/
+│   │   │   ├── fonts/
+│   │   │   ├── favicon.ico
+│   │   │   ├── manifest.json
+│   │   │   └── robots.txt
+│   │   │
+│   │   ├── app/                        # Next.js App Router
+│   │   │   ├── (auth)/
+│   │   │   │   ├── login/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── register/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── forgot-password/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── verify-email/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   └── layout.tsx
+│   │   │   │
+│   │   │   ├── (shop)/
+│   │   │   │   ├── page.tsx            # Homepage
+│   │   │   │   ├── products/
+│   │   │   │   │   ├── page.tsx
+│   │   │   │   │   ├── [slug]/
+│   │   │   │   │   │   └── page.tsx
+│   │   │   │   │   └── search/
+│   │   │   │   │       └── page.tsx
+│   │   │   │   ├── categories/
+│   │   │   │   │   ├── page.tsx
+│   │   │   │   │   └── [slug]/
+│   │   │   │   │       └── page.tsx
+│   │   │   │   ├── cart/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── checkout/
+│   │   │   │   │   ├── page.tsx
+│   │   │   │   │   ├── shipping/
+│   │   │   │   │   │   └── page.tsx
+│   │   │   │   │   ├── payment/
+│   │   │   │   │   │   └── page.tsx
+│   │   │   │   │   └── confirmation/
+│   │   │   │   │       └── page.tsx
+│   │   │   │   ├── seller/
+│   │   │   │   │   └── [slug]/
+│   │   │   │   │       └── page.tsx
+│   │   │   │   └── layout.tsx
+│   │   │   │
+│   │   │   ├── (account)/
+│   │   │   │   ├── profile/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── orders/
+│   │   │   │   │   ├── page.tsx
+│   │   │   │   │   └── [id]/
+│   │   │   │   │       └── page.tsx
+│   │   │   │   ├── addresses/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── wishlist/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── notifications/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── messages/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   └── layout.tsx
+│   │   │   │
+│   │   │   ├── api/
+│   │   │   │   ├── auth/
+│   │   │   │   │   └── [...nextauth]/
+│   │   │   │   │       └── route.ts
+│   │   │   │   └── webhook/
+│   │   │   │       └── route.ts
+│   │   │   │
+│   │   │   ├── globals.css
+│   │   │   ├── layout.tsx
+│   │   │   ├── not-found.tsx
+│   │   │   ├── error.tsx
+│   │   │   ├── loading.tsx
+│   │   │   └── sitemap.ts
+│   │   │
+│   │   ├── components/
+│   │   │   ├── ui/                     # shadcn/ui components
+│   │   │   │   ├── button.tsx
+│   │   │   │   ├── input.tsx
+│   │   │   │   ├── dialog.tsx
+│   │   │   │   ├── dropdown-menu.tsx
+│   │   │   │   ├── form.tsx
+│   │   │   │   ├── card.tsx
+│   │   │   │   ├── badge.tsx
+│   │   │   │   ├── skeleton.tsx
+│   │   │   │   ├── toast.tsx
+│   │   │   │   └── ...
+│   │   │   ├── layout/
+│   │   │   │   ├── header.tsx
+│   │   │   │   ├── footer.tsx
+│   │   │   │   ├── sidebar.tsx
+│   │   │   │   └── mobile-nav.tsx
+│   │   │   ├── product/
+│   │   │   │   ├── product-card.tsx
+│   │   │   │   ├── product-grid.tsx
+│   │   │   │   ├── product-gallery.tsx
+│   │   │   │   ├── product-info.tsx
+│   │   │   │   ├── variant-selector.tsx
+│   │   │   │   └── review-list.tsx
+│   │   │   ├── cart/
+│   │   │   │   ├── cart-item.tsx
+│   │   │   │   ├── cart-summary.tsx
+│   │   │   │   └── cart-drawer.tsx
+│   │   │   ├── checkout/
+│   │   │   │   ├── checkout-stepper.tsx
+│   │   │   │   ├── address-selector.tsx
+│   │   │   │   ├── payment-methods.tsx
+│   │   │   │   └── order-summary.tsx
+│   │   │   ├── common/
+│   │   │   │   ├── breadcrumb.tsx
+│   │   │   │   ├── pagination.tsx
+│   │   │   │   ├── search-bar.tsx
+│   │   │   │   ├── rating.tsx
+│   │   │   │   └── price-display.tsx
+│   │   │   └── providers.tsx
+│   │   │
+│   │   ├── lib/
+│   │   │   ├── api/
+│   │   │   │   ├── client.ts           # API client setup
+│   │   │   │   ├── auth.ts
+│   │   │   │   ├── products.ts
+│   │   │   │   ├── cart.ts
+│   │   │   │   ├── orders.ts
+│   │   │   │   └── user.ts
+│   │   │   ├── utils.ts
+│   │   │   ├── constants.ts
+│   │   │   └── query-client.ts
+│   │   │
+│   │   ├── stores/
+│   │   │   ├── auth-store.ts
+│   │   │   ├── cart-store.ts
+│   │   │   ├── ui-store.ts
+│   │   │   └── wishlist-store.ts
+│   │   │
+│   │   ├── hooks/
+│   │   │   ├── use-cart.ts
+│   │   │   ├── use-auth.ts
+│   │   │   ├── use-debounce.ts
+│   │   │   └── use-mobile.ts
+│   │   │
+│   │   ├── types/
+│   │   │   ├── product.ts
+│   │   │   ├── user.ts
+│   │   │   ├── order.ts
+│   │   │   └── api.ts
+│   │   │
+│   │   └── __tests__/
+│   │       ├── components/
+│   │       ├── hooks/
+│   │       └── utils/
+│   │
+│   ├── mobile/                         # React Native Mobile App
+│   │   ├── package.json
+│   │   ├── tsconfig.json
+│   │   ├── app.json
+│   │   ├── babel.config.js
+│   │   ├── metro.config.js
+│   │   ├── eas.json                    # EAS Build config
+│   │   ├── .env.example
+│   │   ├── README.md
+│   │   │
+│   │   ├── android/
+│   │   │   ├── app/
+│   │   │   ├── gradle/
+│   │   │   ├── build.gradle
+│   │   │   └── settings.gradle
+│   │   │
+│   │   ├── ios/
+│   │   │   ├── TokoBapak/
+│   │   │   ├── TokoBapak.xcodeproj/
+│   │   │   └── Podfile
+│   │   │
+│   │   ├── src/
+│   │   │   ├── navigation/
+│   │   │   │   ├── AppNavigator.tsx
+│   │   │   │   ├── AuthNavigator.tsx
+│   │   │   │   ├── TabNavigator.tsx
+│   │   │   │   └── types.ts
+│   │   │   ├── screens/
+│   │   │   │   ├── auth/
+│   │   │   │   │   ├── LoginScreen.tsx
+│   │   │   │   │   ├── RegisterScreen.tsx
+│   │   │   │   │   └── OnboardingScreen.tsx
+│   │   │   │   ├── home/
+│   │   │   │   │   └── HomeScreen.tsx
+│   │   │   │   ├── products/
+│   │   │   │   │   ├── ProductListScreen.tsx
+│   │   │   │   │   ├── ProductDetailScreen.tsx
+│   │   │   │   │   └── SearchScreen.tsx
+│   │   │   │   ├── cart/
+│   │   │   │   │   └── CartScreen.tsx
+│   │   │   │   ├── checkout/
+│   │   │   │   │   ├── CheckoutScreen.tsx
+│   │   │   │   │   └── PaymentScreen.tsx
+│   │   │   │   └── account/
+│   │   │   │       ├── ProfileScreen.tsx
+│   │   │   │       ├── OrdersScreen.tsx
+│   │   │   │       └── SettingsScreen.tsx
+│   │   │   ├── components/
+│   │   │   │   ├── common/
+│   │   │   │   ├── product/
+│   │   │   │   └── checkout/
+│   │   │   ├── services/
+│   │   │   │   ├── api.ts
+│   │   │   │   └── storage.ts
+│   │   │   ├── stores/
+│   │   │   ├── hooks/
+│   │   │   ├── types/
+│   │   │   ├── utils/
+│   │   │   └── theme/
+│   │   │
+│   │   └── __tests__/
+│   │
+│   └── admin/                          # Admin Dashboard
+│       ├── package.json
+│       ├── bun.lock
+│       ├── next.config.ts
+│       ├── tsconfig.json
+│       ├── tailwind.config.ts
+│       ├── .env.local.example
+│       ├── README.md
+│       ├── Dockerfile
+│       │
+│       ├── app/
+│       │   ├── (dashboard)/
+│       │   │   ├── page.tsx            # Overview
+│       │   │   ├── users/
+│       │   │   │   ├── page.tsx
+│       │   │   │   └── [id]/
+│       │   │   │       └── page.tsx
+│       │   │   ├── products/
+│       │   │   │   ├── page.tsx
+│       │   │   │   ├── new/
+│       │   │   │   │   └── page.tsx
+│       │   │   │   └── [id]/
+│       │   │   │       └── page.tsx
+│       │   │   ├── orders/
+│       │   │   │   ├── page.tsx
+│       │   │   │   └── [id]/
+│       │   │   │       └── page.tsx
+│       │   │   ├── sellers/
+│       │   │   │   └── page.tsx
+│       │   │   ├── analytics/
+│       │   │   │   └── page.tsx
+│       │   │   ├── promotions/
+│       │   │   │   └── page.tsx
+│       │   │   ├── settings/
+│       │   │   │   └── page.tsx
+│       │   │   └── layout.tsx
+│       │   │
+│       │   ├── (auth)/
+│       │   │   └── login/
+│       │   │       └── page.tsx
+│       │   │
+│       │   └── layout.tsx
+│       │
+│       ├── components/
+│       │   ├── dashboard/
+│       │   ├── charts/
+│       │   ├── tables/
+│       │   └── forms/
+│       │
+│       └── lib/
+│
+# ═══════════════════════════════════════════════════════════════════════════
+# BACKEND SERVICES
+# ═══════════════════════════════════════════════════════════════════════════
+├── backend/
+│   ├── prd.md                          # Backend PRD
+│   │
+│   ├── api-gateway/
+│   │   ├── kong/
+│   │   │   ├── kong.yml                # Declarative config
+│   │   │   ├── plugins/
+│   │   │   │   ├── jwt.lua
+│   │   │   │   └── rate-limiting.lua
+│   │   │   └── routes/
+│   │   │       ├── user-routes.yml
+│   │   │       ├── product-routes.yml
+│   │   │       └── order-routes.yml
+│   │   │
+│   │   └── nginx/
+│   │       ├── nginx.conf
+│   │       ├── conf.d/
+│   │       │   ├── ssl.conf
+│   │       │   ├── security-headers.conf
+│   │       │   └── upstream.conf
+│   │       └── snippets/
+│   │
+│   ├── services/
+│   │   │
+│   │   ├── user-service/               # Java - Spring Boot
+│   │   │   ├── pom.xml
+│   │   │   ├── Dockerfile
+│   │   │   ├── Dockerfile.dev
+│   │   │   ├── .env.example
+│   │   │   ├── README.md
+│   │   │   ├── src/
+│   │   │   │   ├── main/
+│   │   │   │   │   ├── java/com/tokobapak/user/
+│   │   │   │   │   │   ├── UserServiceApplication.java
+│   │   │   │   │   │   ├── domain/
+│   │   │   │   │   │   │   ├── model/
+│   │   │   │   │   │   │   │   ├── User.java
+│   │   │   │   │   │   │   │   ├── Address.java
+│   │   │   │   │   │   │   │   └── UserProfile.java
+│   │   │   │   │   │   │   ├── port/
+│   │   │   │   │   │   │   │   ├── in/
+│   │   │   │   │   │   │   │   │   ├── CreateUserUseCase.java
+│   │   │   │   │   │   │   │   │   ├── UpdateUserUseCase.java
+│   │   │   │   │   │   │   │   │   └── GetUserUseCase.java
+│   │   │   │   │   │   │   │   └── out/
+│   │   │   │   │   │   │   │       ├── UserRepositoryPort.java
+│   │   │   │   │   │   │   │       └── UserEventPort.java
+│   │   │   │   │   │   │   └── service/
+│   │   │   │   │   │   │       └── UserApplicationService.java
+│   │   │   │   │   │   ├── adapter/
+│   │   │   │   │   │   │   ├── in/
+│   │   │   │   │   │   │   │   └── web/
+│   │   │   │   │   │   │   │       ├── UserController.java
+│   │   │   │   │   │   │   │       ├── AddressController.java
+│   │   │   │   │   │   │   │       └── dto/
+│   │   │   │   │   │   │   │           ├── CreateUserRequest.java
+│   │   │   │   │   │   │   │           ├── UpdateUserRequest.java
+│   │   │   │   │   │   │   │           └── UserResponse.java
+│   │   │   │   │   │   │   └── out/
+│   │   │   │   │   │   │       ├── persistence/
+│   │   │   │   │   │   │       │   ├── UserJpaEntity.java
+│   │   │   │   │   │   │       │   ├── UserJpaRepository.java
+│   │   │   │   │   │   │       │   └── UserPersistenceAdapter.java
+│   │   │   │   │   │   │       └── messaging/
+│   │   │   │   │   │   │           └── UserKafkaAdapter.java
+│   │   │   │   │   │   └── config/
+│   │   │   │   │   │       ├── SecurityConfig.java
+│   │   │   │   │   │       ├── JpaConfig.java
+│   │   │   │   │   │       └── KafkaConfig.java
+│   │   │   │   │   └── resources/
+│   │   │   │   │       ├── application.yml
+│   │   │   │   │       ├── application-dev.yml
+│   │   │   │   │       ├── application-prod.yml
+│   │   │   │   │       └── db/migration/
+│   │   │   │   │           ├── V1__create_users_table.sql
+│   │   │   │   │           └── V2__create_addresses_table.sql
+│   │   │   │   └── test/
+│   │   │   │       └── java/com/tokobapak/user/
+│   │   │   │           ├── domain/
+│   │   │   │           ├── adapter/
+│   │   │   │           └── integration/
+│   │   │   └── checkstyle.xml
+│   │   │
+│   │   ├── auth-service/               # Java - Spring Boot + Security
+│   │   │   ├── pom.xml
+│   │   │   ├── Dockerfile
+│   │   │   ├── src/
+│   │   │   │   └── main/java/com/tokobapak/auth/
+│   │   │   │       ├── controller/
+│   │   │   │       │   ├── AuthController.java
+│   │   │   │       │   └── OAuthController.java
+│   │   │   │       ├── service/
+│   │   │   │       │   ├── AuthService.java
+│   │   │   │       │   ├── JwtService.java
+│   │   │   │       │   └── OAuthService.java
+│   │   │   │       ├── security/
+│   │   │   │       │   ├── JwtAuthFilter.java
+│   │   │   │       │   └── SecurityConfig.java
+│   │   │   │       └── config/
+│   │   │   └── README.md
+│   │   │
+│   │   ├── product-service/            # NestJS
+│   │   │   ├── package.json
+│   │   │   ├── tsconfig.json
+│   │   │   ├── nest-cli.json
+│   │   │   ├── Dockerfile
+│   │   │   ├── .env.example
+│   │   │   ├── README.md
+│   │   │   ├── src/
+│   │   │   │   ├── main.ts
+│   │   │   │   ├── app.module.ts
+│   │   │   │   ├── config/
+│   │   │   │   │   ├── database.config.ts
+│   │   │   │   │   ├── redis.config.ts
+│   │   │   │   │   └── elasticsearch.config.ts
+│   │   │   │   ├── modules/
+│   │   │   │   │   ├── products/
+│   │   │   │   │   │   ├── products.module.ts
+│   │   │   │   │   │   ├── products.controller.ts
+│   │   │   │   │   │   ├── products.service.ts
+│   │   │   │   │   │   ├── products.repository.ts
+│   │   │   │   │   │   ├── entities/
+│   │   │   │   │   │   │   ├── product.entity.ts
+│   │   │   │   │   │   │   ├── product-variant.entity.ts
+│   │   │   │   │   │   │   └── product-media.entity.ts
+│   │   │   │   │   │   ├── dto/
+│   │   │   │   │   │   │   ├── create-product.dto.ts
+│   │   │   │   │   │   │   ├── update-product.dto.ts
+│   │   │   │   │   │   │   └── product-response.dto.ts
+│   │   │   │   │   │   └── interfaces/
+│   │   │   │   │   ├── categories/
+│   │   │   │   │   └── attributes/
+│   │   │   │   ├── common/
+│   │   │   │   │   ├── filters/
+│   │   │   │   │   │   └── http-exception.filter.ts
+│   │   │   │   │   ├── interceptors/
+│   │   │   │   │   │   └── logging.interceptor.ts
+│   │   │   │   │   ├── guards/
+│   │   │   │   │   │   └── auth.guard.ts
+│   │   │   │   │   └── decorators/
+│   │   │   │   └── database/
+│   │   │   │       └── migrations/
+│   │   │   └── test/
+│   │   │       ├── unit/
+│   │   │       └── e2e/
+│   │   │
+│   │   ├── catalog-service/            # Go - Clean Architecture
+│   │   │   ├── go.mod
+│   │   │   ├── go.sum
+│   │   │   ├── Makefile
+│   │   │   ├── Dockerfile
+│   │   │   ├── .env.example
+│   │   │   ├── README.md
+│   │   │   ├── cmd/
+│   │   │   │   └── server/
+│   │   │   │       └── main.go
+│   │   │   ├── internal/
+│   │   │   │   ├── domain/
+│   │   │   │   │   ├── category.go
+│   │   │   │   │   ├── brand.go
+│   │   │   │   │   ├── attribute.go
+│   │   │   │   │   └── errors.go
+│   │   │   │   ├── usecase/
+│   │   │   │   │   ├── category_uc.go
+│   │   │   │   │   └── brand_uc.go
+│   │   │   │   ├── delivery/
+│   │   │   │   │   ├── http/
+│   │   │   │   │   │   ├── handler.go
+│   │   │   │   │   │   ├── category_handler.go
+│   │   │   │   │   │   ├── router.go
+│   │   │   │   │   │   └── middleware/
+│   │   │   │   │   └── grpc/
+│   │   │   │   │       └── server.go
+│   │   │   │   └── repository/
+│   │   │   │       ├── postgres/
+│   │   │   │       │   └── category_repo.go
+│   │   │   │       └── redis/
+│   │   │   │           └── category_cache.go
+│   │   │   ├── pkg/
+│   │   │   │   ├── database/
+│   │   │   │   ├── logger/
+│   │   │   │   ├── validator/
+│   │   │   │   └── utils/
+│   │   │   ├── migrations/
+│   │   │   └── tests/
+│   │   │       ├── mocks/
+│   │   │       └── integration/
+│   │   │
+│   │   ├── inventory-service/          # Go
+│   │   │   ├── go.mod
+│   │   │   ├── Dockerfile
+│   │   │   ├── cmd/
+│   │   │   ├── internal/
+│   │   │   ├── pkg/
+│   │   │   └── README.md
+│   │   │
+│   │   ├── cart-service/               # NestJS + Redis
+│   │   │   ├── package.json
+│   │   │   ├── Dockerfile
+│   │   │   ├── src/
+│   │   │   └── README.md
+│   │   │
+│   │   ├── order-service/              # Java - Spring Boot
+│   │   │   ├── pom.xml
+│   │   │   ├── Dockerfile
+│   │   │   ├── src/
+│   │   │   │   └── main/java/com/tokobapak/order/
+│   │   │   │       ├── domain/
+│   │   │   │       │   ├── Order.java
+│   │   │   │       │   ├── OrderItem.java
+│   │   │   │       │   ├── OrderStatus.java
+│   │   │   │       │   └── events/
+│   │   │   │       │       ├── OrderCreatedEvent.java
+│   │   │   │       │       ├── OrderPaidEvent.java
+│   │   │   │       │       └── OrderShippedEvent.java
+│   │   │   │       ├── controller/
+│   │   │   │       ├── service/
+│   │   │   │       └── config/
+│   │   │   └── README.md
+│   │   │
+│   │   ├── payment-service/            # Java - Spring Boot
+│   │   │   ├── pom.xml
+│   │   │   ├── Dockerfile
+│   │   │   ├── src/
+│   │   │   │   └── main/java/com/tokobapak/payment/
+│   │   │   │       ├── controller/
+│   │   │   │       │   ├── PaymentController.java
+│   │   │   │       │   └── WebhookController.java
+│   │   │   │       ├── service/
+│   │   │   │       │   ├── PaymentService.java
+│   │   │   │       │   ├── MidtransService.java
+│   │   │   │       │   └── XenditService.java
+│   │   │   │       ├── gateway/
+│   │   │   │       │   ├── PaymentGateway.java
+│   │   │   │       │   ├── MidtransGateway.java
+│   │   │   │       │   └── XenditGateway.java
+│   │   │   │       └── config/
+│   │   │   └── README.md
+│   │   │
+│   │   ├── shipping-service/           # Go
+│   │   │   ├── go.mod
+│   │   │   ├── Dockerfile
+│   │   │   ├── internal/
+│   │   │   │   ├── courier/
+│   │   │   │   │   ├── jne.go
+│   │   │   │   │   ├── jnt.go
+│   │   │   │   │   ├── sicepat.go
+│   │   │   │   │   └── gosend.go
+│   │   │   │   └── handler/
+│   │   │   └── README.md
+│   │   │
+│   │   ├── notification-service/       # NestJS + Bull Queue
+│   │   │   ├── package.json
+│   │   │   ├── Dockerfile
+│   │   │   ├── src/
+│   │   │   │   ├── modules/
+│   │   │   │   │   ├── email/
+│   │   │   │   │   │   ├── email.service.ts
+│   │   │   │   │   │   ├── email.processor.ts
+│   │   │   │   │   │   └── templates/
+│   │   │   │   │   │       ├── welcome.hbs
+│   │   │   │   │   │       ├── order-confirmation.hbs
+│   │   │   │   │   │       └── password-reset.hbs
+│   │   │   │   │   ├── sms/
+│   │   │   │   │   ├── push/
+│   │   │   │   │   └── whatsapp/
+│   │   │   │   └── queue/
+│   │   │   │       ├── email.consumer.ts
+│   │   │   │       └── sms.consumer.ts
+│   │   │   └── README.md
+│   │   │
+│   │   ├── search-service/             # NestJS + Elasticsearch
+│   │   │   ├── package.json
+│   │   │   ├── Dockerfile
+│   │   │   ├── src/
+│   │   │   │   ├── elasticsearch/
+│   │   │   │   │   ├── indices/
+│   │   │   │   │   │   └── products.json
+│   │   │   │   │   ├── mappings/
+│   │   │   │   │   ├── analyzers/
+│   │   │   │   │   │   └── indonesian.json
+│   │   │   │   │   └── search.service.ts
+│   │   │   │   └── sync/
+│   │   │   │       └── product-sync.service.ts
+│   │   │   └── README.md
+│   │   │
+│   │   ├── review-service/             # Go
+│   │   │   ├── go.mod
+│   │   │   ├── Dockerfile
+│   │   │   ├── internal/
+│   │   │   └── README.md
+│   │   │
+│   │   ├── chat-service/               # NestJS + Socket.io
+│   │   │   ├── package.json
+│   │   │   ├── Dockerfile
+│   │   │   ├── src/
+│   │   │   │   ├── gateway/
+│   │   │   │   │   └── chat.gateway.ts
+│   │   │   │   ├── modules/
+│   │   │   │   │   ├── messages/
+│   │   │   │   │   └── rooms/
+│   │   │   │   └── redis/
+│   │   │   │       └── pubsub.service.ts
+│   │   │   └── README.md
+│   │   │
+│   │   ├── recommendation-service/     # Python - FastAPI
+│   │   │   ├── pyproject.toml
+│   │   │   ├── requirements.txt
+│   │   │   ├── Dockerfile
+│   │   │   ├── app/
+│   │   │   │   ├── main.py
+│   │   │   │   ├── api/
+│   │   │   │   │   ├── routes.py
+│   │   │   │   │   └── dependencies.py
+│   │   │   │   ├── core/
+│   │   │   │   │   ├── config.py
+│   │   │   │   │   └── models.py
+│   │   │   │   └── ml/
+│   │   │   │       ├── collaborative_filtering.py
+│   │   │   │       └── content_based.py
+│   │   │   └── README.md
+│   │   │
+│   │   ├── analytics-service/          # Python - FastAPI
+│   │   │   ├── pyproject.toml
+│   │   │   ├── requirements.txt
+│   │   │   ├── Dockerfile
+│   │   │   ├── app/
+│   │   │   └── README.md
+│   │   │
+│   │   ├── promotion-service/          # Java - Spring Boot
+│   │   │   ├── pom.xml
+│   │   │   ├── Dockerfile
+│   │   │   ├── src/
+│   │   │   └── README.md
+│   │   │
+│   │   ├── seller-service/             # NestJS
+│   │   │   ├── package.json
+│   │   │   ├── Dockerfile
+│   │   │   ├── src/
+│   │   │   └── README.md
+│   │   │
+│   │   └── media-service/              # Go
+│   │       ├── go.mod
+│   │       ├── Dockerfile
+│   │       ├── cmd/
+│   │       └── internal/
+│   │           ├── handler/
+│   │           │   ├── upload.go
+│   │           │   └── resize.go
+│   │           ├── storage/
+│   │           │   ├── seaweedfs.go
+│   │           │   ├── cloudflare_r2.go
+│   │           │   └── s3.go
+│   │           └── processor/
+│   │               ├── image.go
+│   │               └── video.go
+│   │
+│   └── shared/
+│       ├── proto/                      # gRPC Proto files
+│       │   ├── user.proto
+│       │   ├── product.proto
+│       │   ├── order.proto
+│       │   └── payment.proto
+│       │
+│       ├── events/                     # Event schemas (Avro/JSON)
+│       │   ├── schemas/
+│       │   │   ├── user-events.avsc
+│       │   │   ├── order-events.avsc
+│       │   │   └── payment-events.avsc
+│       │   └── README.md
+│       │
+│       └── libraries/
+│           ├── java-common/
+│           │   ├── pom.xml
+│           │   └── src/
+│           ├── node-common/
+│           │   ├── package.json
+│           │   └── src/
+│           │       ├── auth/
+│           │       ├── logging/
+│           │       └── validation/
+│           └── go-common/
+│               ├── go.mod
+│               └── pkg/
+│
+# ═══════════════════════════════════════════════════════════════════════════
+# INFRASTRUCTURE
+# ═══════════════════════════════════════════════════════════════════════════
+├── infrastructure/
+│   │
+│   ├── kubernetes/
+│   │   ├── README.md
+│   │   ├── namespaces/
+│   │   │   ├── development.yaml
+│   │   │   ├── staging.yaml
+│   │   │   └── production.yaml
+│   │   ├── base/                       # Kustomize base
+│   │   │   ├── kustomization.yaml
+│   │   │   ├── namespace.yaml
+│   │   │   └── network-policies/
+│   │   ├── overlays/                   # Kustomize overlays
+│   │   │   ├── development/
+│   │   │   │   ├── kustomization.yaml
+│   │   │   │   └── patches/
+│   │   │   ├── staging/
+│   │   │   └── production/
+│   │   ├── deployments/
+│   │   │   ├── user-service.yaml
+│   │   │   ├── product-service.yaml
+│   │   │   ├── order-service.yaml
+│   │   │   └── ...
+│   │   ├── services/
+│   │   ├── configmaps/
+│   │   ├── secrets/
+│   │   ├── ingress/
+│   │   │   └── ingress.yaml
+│   │   └── hpa/
+│   │       └── autoscaling.yaml
+│   │
+│   ├── terraform/
+│   │   ├── README.md
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   ├── outputs.tf
+│   │   ├── versions.tf
+│   │   ├── modules/
+│   │   │   ├── vpc/
+│   │   │   │   ├── main.tf
+│   │   │   │   ├── variables.tf
+│   │   │   │   └── outputs.tf
+│   │   │   ├── eks/
+│   │   │   ├── rds/
+│   │   │   ├── elasticache/
+│   │   │   ├── elasticsearch/
+│   │   │   ├── s3/
+│   │   │   └── cloudfront/
+│   │   └── environments/
+│   │       ├── dev/
+│   │       │   ├── main.tf
+│   │       │   ├── terraform.tfvars
+│   │       │   └── backend.tf
+│   │       ├── staging/
+│   │       └── production/
+│   │
+│   ├── helm/
+│   │   ├── charts/
+│   │   │   ├── tokobapak/
+│   │   │   │   ├── Chart.yaml
+│   │   │   │   ├── values.yaml
+│   │   │   │   └── templates/
+│   │   │   └── dependencies/
+│   │   └── values/
+│   │       ├── development.yaml
+│   │       ├── staging.yaml
+│   │       └── production.yaml
+│   │
+│   ├── monitoring/
+│   │   ├── prometheus/
+│   │   │   ├── prometheus.yml
+│   │   │   ├── alert-rules.yml
+│   │   │   └── recording-rules.yml
+│   │   ├── grafana/
+│   │   │   ├── dashboards/
+│   │   │   │   ├── overview.json
+│   │   │   │   ├── services.json
+│   │   │   │   └── kubernetes.json
+│   │   │   └── datasources/
+│   │   │       └── datasources.yaml
+│   │   ├── alertmanager/
+│   │   │   └── alertmanager.yml
+│   │   ├── jaeger/
+│   │   │   └── jaeger.yml
+│   │   └── elk/
+│   │       ├── elasticsearch/
+│   │       │   └── elasticsearch.yml
+│   │       ├── logstash/
+│   │       │   ├── logstash.conf
+│   │       │   └── pipeline/
+│   │       ├── kibana/
+│   │       │   └── kibana.yml
+│   │       └── filebeat/
+│   │           └── filebeat.yml
+│   │
+│   └── scripts/
+│       ├── setup/
+│       │   ├── init-cluster.sh
+│       │   ├── install-dependencies.sh
+│       │   └── setup-secrets.sh
+│       ├── deploy/
+│       │   ├── deploy.sh
+│       │   ├── rollback.sh
+│       │   └── canary-deploy.sh
+│       ├── backup/
+│       │   ├── backup-postgres.sh
+│       │   ├── backup-mongodb.sh
+│       │   └── restore.sh
+│       └── maintenance/
+│           ├── scale-services.sh
+│           └── cleanup.sh
+│
+# ═══════════════════════════════════════════════════════════════════════════
+# DATABASE
+# ═══════════════════════════════════════════════════════════════════════════
+├── database/
+│   ├── README.md
+│   │
+│   ├── migrations/
+│   │   ├── user-service/
+│   │   │   ├── V1__create_users_table.sql
+│   │   │   ├── V2__create_addresses_table.sql
+│   │   │   └── V3__add_indexes.sql
+│   │   ├── product-service/
+│   │   ├── order-service/
+│   │   └── ...
+│   │
+│   ├── seeds/
+│   │   ├── development/
+│   │   │   ├── users.sql
+│   │   │   ├── products.sql
+│   │   │   ├── categories.sql
+│   │   │   └── sample-orders.sql
+│   │   └── production/
+│   │       ├── categories.sql
+│   │       └── admin-users.sql
+│   │
+│   └── schemas/
+│       ├── user-service.sql
+│       ├── product-service.sql
+│       ├── order-service.sql
+│       └── diagrams/
+│           ├── user-service-erd.png
+│           └── product-service-erd.png
+│
+# ═══════════════════════════════════════════════════════════════════════════
+# MESSAGE QUEUE
+# ═══════════════════════════════════════════════════════════════════════════
+├── message-queue/
+│   ├── kafka/
+│   │   ├── docker-compose.yml
+│   │   ├── topics/
+│   │   │   ├── topics.sh                # Topic creation script
+│   │   │   ├── user-events.json
+│   │   │   ├── order-events.json
+│   │   │   └── payment-events.json
+│   │   ├── schemas/
+│   │   │   └── *.avsc
+│   │   └── connect/
+│   │       └── connectors/
+│   │           └── debezium/
+│   │
+│   └── rabbitmq/
+│       ├── rabbitmq.conf
+│       ├── definitions.json
+│       ├── exchanges/
+│       └── queues/
+│
+# ═══════════════════════════════════════════════════════════════════════════
+# CACHE
+# ═══════════════════════════════════════════════════════════════════════════
+├── cache/
+│   └── redis/
+│       ├── redis.conf
+│       ├── redis-cluster.conf
+│       ├── sentinel.conf
+│       └── scripts/
+│           ├── setup-cluster.sh
+│           └── health-check.sh
+│
+# ═══════════════════════════════════════════════════════════════════════════
+# STORAGE
+# ═══════════════════════════════════════════════════════════════════════════
+├── storage/
+│   ├── seaweedfs/
+│   │   ├── master.toml
+│   │   ├── volume.toml
+│   │   └── filer.toml
+│   │
+│   └── cloudflare-r2/
+│       ├── config.json
+│       └── cors-policy.json
+│
+# ═══════════════════════════════════════════════════════════════════════════
+# SEARCH
+# ═══════════════════════════════════════════════════════════════════════════
+├── search/
+│   └── elasticsearch/
+│       ├── elasticsearch.yml
+│       ├── mappings/
+│       │   ├── products.json
+│       │   ├── sellers.json
+│       │   └── categories.json
+│       ├── analyzers/
+│       │   └── indonesian.json
+│       └── templates/
+│           └── products-template.json
+│
+# ═══════════════════════════════════════════════════════════════════════════
+# CI/CD
+# ═══════════════════════════════════════════════════════════════════════════
+├── .github/
+│   ├── PULL_REQUEST_TEMPLATE.md
+│   ├── ISSUE_TEMPLATE/
+│   │   ├── bug_report.md
+│   │   ├── feature_request.md
+│   │   └── config.yml
+│   │
+│   ├── workflows/
+│   │   ├── ci.yml                      # Main CI pipeline
+│   │   ├── cd.yml                      # Main CD pipeline
+│   │   │
+│   │   ├── services/
+│   │   │   ├── user-service.yml
+│   │   │   ├── product-service.yml
+│   │   │   ├── order-service.yml
+│   │   │   └── ...
+│   │   │
+│   │   ├── frontend/
+│   │   │   ├── web.yml
+│   │   │   ├── admin.yml
+│   │   │   └── mobile.yml
+│   │   │
+│   │   ├── security/
+│   │   │   ├── codeql.yml
+│   │   │   ├── dependency-scan.yml
+│   │   │   └── secret-scan.yml
+│   │   │
+│   │   └── maintenance/
+│   │       ├── stale.yml
+│   │       └── auto-merge.yml
+│   │
+│   ├── actions/
+│   │   ├── docker-build/
+│   │   │   └── action.yml
+│   │   ├── k8s-deploy/
+│   │   │   └── action.yml
+│   │   └── notify/
+│   │       └── action.yml
+│   │
+│   └── dependabot.yml
+│
+# ═══════════════════════════════════════════════════════════════════════════
+# TESTING
+# ═══════════════════════════════════════════════════════════════════════════
+├── tests/
+│   ├── README.md
+│   │
+│   ├── integration/
+│   │   ├── user-flow.test.ts
+│   │   ├── order-flow.test.ts
+│   │   ├── payment-flow.test.ts
+│   │   └── checkout-flow.test.ts
+│   │
+│   ├── e2e/
+│   │   ├── playwright.config.ts
+│   │   ├── tests/
+│   │   │   ├── auth.spec.ts
+│   │   │   ├── checkout.spec.ts
+│   │   │   ├── search.spec.ts
+│   │   │   └── account.spec.ts
+│   │   └── fixtures/
+│   │
+│   ├── load/
+│   │   ├── k6/
+│   │   │   ├── product-load.js
+│   │   │   ├── checkout-load.js
+│   │   │   ├── search-load.js
+│   │   │   └── config/
+│   │   │       ├── development.js
+│   │   │       └── production.js
+│   │   └── artillery/
+│   │       └── scenarios/
+│   │
+│   ├── contract/
+│   │   └── pact/
+│   │       └── consumer-tests/
+│   │
+│   └── security/
+│       ├── owasp-zap/
+│       │   └── zap-scan.yml
+│       └── trivy/
+│           └── trivy-config.yaml
+│
+# ═══════════════════════════════════════════════════════════════════════════
+# SCRIPTS & TOOLS
+# ═══════════════════════════════════════════════════════════════════════════
+├── scripts/
+│   ├── setup/
+│   │   ├── init-databases.sh
+│   │   ├── init-kafka.sh
+│   │   ├── init-redis.sh
+│   │   ├── init-elasticsearch.sh
+│   │   └── setup-dev-env.sh
+│   │
+│   ├── deploy/
+│   │   ├── deploy-dev.sh
+│   │   ├── deploy-staging.sh
+│   │   ├── deploy-prod.sh
+│   │   └── rollback.sh
+│   │
+│   ├── backup/
+│   │   ├── backup-postgres.sh
+│   │   ├── backup-mongodb.sh
+│   │   ├── backup-elasticsearch.sh
+│   │   └── restore.sh
+│   │
+│   ├── migrations/
+│   │   ├── run-migrations.sh
+│   │   └── create-migration.sh
+│   │
+│   └── utils/
+│       ├── generate-jwt.sh
+│       ├── seed-data.sh
+│       ├── health-check.sh
+│       └── cleanup-docker.sh
+│
+└── tools/
+    ├── api-testing/
+    │   └── postman/
+    │       └── scripts/
+    │
+    ├── load-testing/
+    │   └── k6/
+    │       └── scripts/
+    │
+    ├── code-quality/
+    │   ├── sonarqube/
+    │   │   └── sonar-project.properties
+    │   └── eslint/
+    │       └── shared-config.js
+    │
+    ├── monitoring/
+    │   └── dashboards/
+    │       ├── grafana/
+    │       └── datadog/
+    │
+    └── local-dev/
+        ├── docker/
+        │   ├── postgres/
+        │   │   └── init.sql
+        │   ├── kafka/
+        │   └── redis/
+        └── mocks/
+            └── api-mocks/
