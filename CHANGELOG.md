@@ -20,6 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.1] - 2026-01-13
 
+### 🎨 Design & Branding
+- **Brand Identity**
+  - Created `BRAND_GUIDELINES.md` with color palette, typography and logo usage rules.
+  - Generated primary logo assets (Full Logo and Logo Mark).
+  - Established asset directory at `frontend/web/public/images/branding/`.
+
 ### 🔧 Maintenance
 - **Monorepo Cleanup**
   - Configured comprehensive `.gitignore` for Polyglot environmet (Node.js, Java, Go, Python).
