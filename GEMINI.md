@@ -247,6 +247,13 @@ Query: "Dialog component with form validation"
 - Gunakan JSDoc/TSDoc untuk public functions
 - Maintain ADR (Architecture Decision Records) di `docs/architecture/ADR/`
 
+### Git & Changelog Policy ⚠️
+
+Setiap kali melakukan perubahan kode yang signifikan:
+1. **Update CHANGELOG.md**: Tambahkan entri di bawah `[Unreleased]` atau versi terbaru sesuai format Keep a Changelog.
+2. **Git Push**: Setelah selesai (atau dalam tahapan logis), lakukan `git add`, `git commit` dengan pesan deskriptif, dan `git push` ke remote repository. Jangan menunggu user meminta push kecuali sedang dalam sesi debugging intensif.
+
+
 ---
 
 ## 🔗 Related Resources

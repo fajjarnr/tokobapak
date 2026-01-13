@@ -18,6 +18,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.1] - 2026-01-13
+
+### 🔧 Maintenance
+- **Monorepo Cleanup**
+  - Configured comprehensive `.gitignore` for Polyglot environmet (Node.js, Java, Go, Python).
+  - Removed system garbage files (`.DS_Store`).
+  - Fixed git index to ensure strict ignore rules.
+  - Added Git & Changelog policy to AI assistant guidelines.
+
 ## [0.2.0] - 2026-01-13
 
 ### ✨ Added
