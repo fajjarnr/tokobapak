@@ -16,6 +16,7 @@ The following endpoints are available across the microservices.
 
 ## 2. Catalog Service
 **Base URL:** `http://localhost:3002`
+**Swagger UI:** `http://localhost:3002/swagger/index.html`
 
 ### Endpoints
 - `GET /api/v1/categories` - List categories
