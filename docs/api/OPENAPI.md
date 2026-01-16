@@ -25,8 +25,10 @@ The following endpoints are available across the microservices.
 - `PUT /api/v1/categories/:id` - Update category
 - `DELETE /api/v1/categories/:id` - Delete category
 - `GET /api/v1/brands` - List brands
+- `GET /api/v1/brands/:id` - Get brand details
 - `POST /api/v1/brands` - Create brand
-- ... (Standard CRUD for Brands)
+- `PUT /api/v1/brands/:id` - Update brand
+- `DELETE /api/v1/brands/:id` - Delete brand
 
 ## 3. Cart Service
 **Base URL:** `http://localhost:3003`
