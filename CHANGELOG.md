@@ -32,6 +32,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - PostgreSQL + TypeORM configuration
   - Docker production deployment ready
 
+#### Backend - Catalog Service
+- **Catalog Service (Go)** - Category & Brand Management
+  - Clean Architecture (Domain, Usecase, Repository, Delivery)
+  - Go 1.25 + Chi Router + PostgreSQL (pgx/stdlib)
+  - Category CRUD with hierarchy support
+  - SQL Migrations included
+
 
 ### 🚀 Planned
 - Mobile application (React Native + Expo)
