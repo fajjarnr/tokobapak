@@ -3,7 +3,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { Minus, Plus, Trash2, ArrowRight } from 'lucide-react'
+import { Minus, Plus, Trash2, ArrowRight, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
@@ -29,7 +29,7 @@ export default function CartPage() {
                     <Trash2 className="h-10 w-10 text-muted-foreground" />
                 </div>
                 <h1 className="text-2xl font-bold">Your cart is empty</h1>
-                <p className="text-muted-foreground">Looks like you haven't added anything to your cart yet.</p>
+                <p className="text-muted-foreground">Looks like you haven&apos;t added anything to your cart yet.</p>
                 <Button asChild size="lg" className="mt-4">
                     <Link href="/">Start Shopping</Link>
                 </Button>
@@ -146,7 +146,7 @@ export default function CartPage() {
                     </Card>
 
                     <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                        <ShieldCheckIcon className="h-4 w-4" /> Secure Checkout
+                        <ShieldCheck className="h-4 w-4" /> Secure Checkout
                     </div>
                 </div>
             </div>
@@ -154,22 +154,3 @@ export default function CartPage() {
     )
 }
 
-function ShieldCheckIcon(props: any) {
-    return (
-        <svg
-            {...props}
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
-            <path d="m9 12 2 2 4-4" />
-        </svg>
-    )
-}

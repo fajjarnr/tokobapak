@@ -1,13 +1,21 @@
-
 'use client'
 
 import { useState } from 'react'
 import { useParams } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbPage,
+    BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 import {
     ShoppingCart,
     Heart,
@@ -22,6 +30,7 @@ import {
 import { useCartStore } from '@/stores/cart-store'
 import { toast } from 'sonner'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { ProductRecommendations } from '@/components/product/product-recommendations'
 
 export default function ProductDetailPage() {
     const params = useParams()
@@ -78,7 +87,28 @@ export default function ProductDetailPage() {
     }
 
     return (
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 py-8 pb-32 md:pb-8">
+            {/* Breadcrumbs */}
+            <Breadcrumb className="mb-6">
+                <BreadcrumbList>
+                    <BreadcrumbItem>
+                        <BreadcrumbLink asChild>
+                            <Link href="/">Home</Link>
+                        </BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem>
+                        <BreadcrumbLink asChild>
+                            <Link href="/products">Electronics</Link>
+                        </BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem>
+                        <BreadcrumbPage>{product.name}</BreadcrumbPage>
+                    </BreadcrumbItem>
+                </BreadcrumbList>
+            </Breadcrumb>
+
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
                 {/* Product Images */}
                 <div className="w-full lg:w-1/2 space-y-4">
@@ -91,7 +121,7 @@ export default function ProductDetailPage() {
                             priority
                         />
                     </div>
-                    <div className="flex gap-4 overflow-x-auto pb-2">
+                    <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
                         {product.images.map((img, index) => (
                             <button
                                 key={index}
@@ -148,8 +178,8 @@ export default function ProductDetailPage() {
                         </div>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex flex-col sm:flex-row gap-4">
+                    {/* Actions (Desktop) */}
+                    <div className="hidden md:flex flex-col sm:flex-row gap-4">
                         <div className="flex items-center border rounded-md w-max">
                             <Button
                                 variant="ghost"
@@ -200,6 +230,32 @@ export default function ProductDetailPage() {
                 </div>
             </div>
 
+            {/* Sticky Mobile Add to Cart Bar */}
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t md:hidden z-50 flex items-center gap-4 shadow-xl pb-6">
+                <div className="flex items-center border rounded-md">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-10 w-10"
+                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    >
+                        <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="w-8 text-center font-medium">{quantity}</span>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-10 w-10"
+                        onClick={() => setQuantity(quantity + 1)}
+                    >
+                        <Plus className="h-4 w-4" />
+                    </Button>
+                </div>
+                <Button className="flex-1" size="lg" onClick={handleAddToCart}>
+                    Add to Cart - {formatPrice(product.price * quantity)}
+                </Button>
+            </div>
+
             {/* Product Description & Reviews Tabs */}
             <div className="mt-12">
                 <Tabs defaultValue="description" className="w-full">
@@ -245,6 +301,9 @@ export default function ProductDetailPage() {
                     </TabsContent>
                 </Tabs>
             </div>
+
+            {/* Recommended Products */}
+            <ProductRecommendations />
         </div>
     )
 }
