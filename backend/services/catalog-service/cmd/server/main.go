@@ -1,0 +1,61 @@
+package main
+
+import (
+	"database/sql"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	_ "github.com/lib/pq"
+
+	_http "github.com/tokobapak/catalog-service/internal/delivery/http"
+	"github.com/tokobapak/catalog-service/internal/repository/postgres"
+	"github.com/tokobapak/catalog-service/internal/usecase"
+)
+
+func main() {
+	dbHost := getEnv("DB_HOST", "localhost")
+	dbPort := getEnv("DB_PORT", "5432")
+	dbUser := getEnv("DB_USER", "postgres")
+	dbPass := getEnv("DB_PASS", "postgres")
+	dbName := getEnv("DB_NAME", "tokobapak_catalog")
+
+	dbConn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", dbUser, dbPass, dbHost, dbPort, dbName)
+	db, err := sql.Open("postgres", dbConn)
+	if err != nil {
+		log.Fatal(err)
+	}
+	
+	if err := db.Ping(); err != nil {
+		log.Fatal("Cannot connect to database", err)
+	}
+
+	r := chi.NewRouter()
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Use(middleware.Timeout(60 * time.Second))
+
+	timeoutContext := time.Duration(2) * time.Second
+
+	categoryRepo := postgres.NewPostgresCategoryRepository(db)
+	categoryUsecase := usecase.NewCategoryUsecase(categoryRepo, timeoutContext)
+	_http.NewCategoryHandler(r, categoryUsecase)
+
+	port := getEnv("PORT", "3002")
+	fmt.Printf("Catalog Service started on port %s\n", port)
+	
+	if err := http.ListenAndServe(":"+port, r); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
+}
