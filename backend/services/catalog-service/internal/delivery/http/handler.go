@@ -27,6 +27,15 @@ func NewCategoryHandler(r *chi.Mux, us domain.CategoryUsecase) {
 	})
 }
 
+// Fetch godoc
+// @Summary List categories
+// @Description Get all categories with cursor pagination
+// @Tags categories
+// @Produce json
+// @Param cursor query string false "Cursor for pagination"
+// @Param num query int false "Number of items to return"
+// @Success 200 {object} map[string]interface{}
+// @Router /categories [get]
 func (a *CategoryHandler) Fetch(w http.ResponseWriter, r *http.Request) {
 	cursor := r.URL.Query().Get("cursor")
 	numS := r.URL.Query().Get("num")

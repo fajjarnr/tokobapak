@@ -1,0 +1,55 @@
+basePath: /api/v1
+host: localhost:3002
+info:
+  contact: {}
+  description: Category and Brand management service for TokoBapak
+  title: Catalog Service API
+  version: "1.0"
+paths:
+  /brands:
+    get:
+      description: Get all brands with cursor pagination
+      parameters:
+      - description: Cursor for pagination
+        in: query
+        name: cursor
+        type: string
+      - description: Number of items to return
+        in: query
+        name: num
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List brands
+      tags:
+      - brands
+  /categories:
+    get:
+      description: Get all categories with cursor pagination
+      parameters:
+      - description: Cursor for pagination
+        in: query
+        name: cursor
+        type: string
+      - description: Number of items to return
+        in: query
+        name: num
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List categories
+      tags:
+      - categories
+swagger: "2.0"

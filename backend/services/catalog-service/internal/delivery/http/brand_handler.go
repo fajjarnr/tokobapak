@@ -27,6 +27,15 @@ func NewBrandHandler(r *chi.Mux, us domain.BrandUsecase) {
 	})
 }
 
+// Fetch godoc
+// @Summary List brands
+// @Description Get all brands with cursor pagination
+// @Tags brands
+// @Produce json
+// @Param cursor query string false "Cursor for pagination"
+// @Param num query int false "Number of items to return"
+// @Success 200 {object} map[string]interface{}
+// @Router /brands [get]
 func (a *BrandHandler) Fetch(w http.ResponseWriter, r *http.Request) {
 	cursor := r.URL.Query().Get("cursor")
 	numS := r.URL.Query().Get("num")
