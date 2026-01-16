@@ -67,6 +67,9 @@ target/
 *.test
 *.prof
 vendor/
+# Compiled binaries
+**/catalog-service/server
+**/cmd/**/server
 
 # ------------------------------------------------------------------------------
 # PYTHON
