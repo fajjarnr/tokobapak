@@ -10,6 +10,7 @@ This directory contains all project documentation.
 | [architecture/](./architecture/) | System architecture and diagrams |
 | [backend/](./backend/) | Backend development guides |
 | [design/](./design/) | Brand guidelines and design specs |
+| [prd/](./prd/) | Product Requirement Documents (PRD) |
 
 ## Quick Links
 
