@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### ✨ Added
+
+#### Frontend - Shop Flow
+- **Product Listing Enhancements**
+  - Advanced Filtering (Price range, Categories, Brands via checkbox/slider)
+  - Sorting options (Price, Rating, Newest)
+  - Pagination system
+- **Product Detail Features**
+  - Recommendations component
+  - Improved tabs for Description and Reviews
+- **Checkout Process**
+  - Refined Checkout page UI
+  - Animated Order Success page with tracking ID
+- **Developer Experience**
+  - Fixed ESLint configuration for Next.js 15 compatibility
+
+
 ### 🚀 Planned
 - Mobile application (React Native + Expo)
 - Admin dashboard application
