@@ -18,6 +18,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.0] - 2026-01-16
+
+### ✨ Added
+
+#### Frontend - Homepage Enhancements
+- **Flash Sale Section**
+  - Countdown timer dengan hours:minutes:seconds
+  - Horizontal scrollable product carousel
+  - Gradient border styling (rose to orange)
+  - Mock product data untuk iPhone, Samsung, MacBook, Sony, iPad
+
+- **Best Sellers Section**
+  - Ranking badges (gold, silver, bronze)
+  - Sold count indicators
+  - Crown icon untuk #1 product
+  - Grid layout 4 columns
+
+- **Trust Badges Section**
+  - Gratis Ongkir, Pembayaran Aman, Garansi 7 Hari, CS 24/7
+  - Icon dengan gradient backgrounds
+  - Full-width placement after Hero
+
+- **Newsletter Section**
+  - Email subscription form dengan validasi
+  - Gradient background (indigo to pink)
+  - Loading dan success states
+  - Privacy policy link
+
+- **Enhanced Hero Section**
+  - Dynamic gradient overlays per slide
+  - Third slide added (Gratis Ongkir promo)
+  - Improved CTA button styling
+
+- **Categories Grid Enhancement**
+  - Gradient hover effects per category
+  - Individual color coding
+
+### 🔧 Fixed
+- Fixed `resizable.tsx` shadcn component untuk react-resizable-panels v4 compatibility
+  - Changed from namespace import ke named exports (Group, Panel, Separator)
+
+---
+
+
 ## [0.2.1] - 2026-01-13
 
 ### 🎨 Design & Branding
