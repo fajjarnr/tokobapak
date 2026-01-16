@@ -25,6 +25,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Developer Experience**
   - Fixed ESLint configuration for Next.js 15 compatibility
 
+#### Backend - Product Service
+- **Product Service (NestJS)** - First backend microservice
+  - Full CRUD endpoints with pagination
+  - Product, ProductVariant, ProductMedia entities
+  - PostgreSQL + TypeORM configuration
+  - Docker production deployment ready
+
 
 ### 🚀 Planned
 - Mobile application (React Native + Expo)
