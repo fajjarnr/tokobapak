@@ -1,9 +1,10 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
+  const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
 
   // Enable CORS for frontend
@@ -13,30 +14,41 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Swagger Configuration
-  const config = new DocumentBuilder()
-    .setTitle('Product Service API')
-    .setDescription('The product catalog service for TokoBapak')
-    .setVersion('1.0')
-    .addTag('products')
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  // Swagger Configuration (only in non-production)
+  if (process.env.NODE_ENV !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('Product Service API')
+      .setDescription('The product catalog service for TokoBapak')
+      .setVersion('1.0')
+      .addTag('products')
+      .addBearerAuth()
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document);
+  }
 
-  // Global validation pipe
+  // Global validation pipe with production settings
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      disableErrorMessages: process.env.NODE_ENV === 'production',
       transformOptions: {
         enableImplicitConversion: true,
       },
     }),
   );
 
+  // Graceful shutdown
+  app.enableShutdownHooks();
+
   const port = process.env.PORT ?? 3001;
   await app.listen(port);
-  console.log(`🚀 Product Service running on http://localhost:${port}`);
+  logger.log(`🚀 Product Service running on http://localhost:${port}`);
 }
-bootstrap();
+
+bootstrap().catch((error) => {
+  console.error('Failed to start Product Service:', error);
+  process.exit(1);
+});

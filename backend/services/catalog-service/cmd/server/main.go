@@ -43,12 +43,19 @@ func main() {
 	// @BasePath        /api/v1
 
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
+	
+	// Production middleware stack (Context7 best practices)
+	r.Use(middleware.RequestID)    // Assign unique ID to each request
+	r.Use(middleware.RealIP)       // Get real IP from X-Forwarded-For
+	r.Use(middleware.Logger)       // Log request details
+	r.Use(middleware.Recoverer)    // Recover from panics, return HTTP 500
+	r.Use(middleware.CleanPath)    // Clean double slashes from URL
 	r.Use(middleware.Timeout(60 * time.Second))
 
-	// Swagger endpoint
-	r.Get("/swagger/*", httpSwagger.WrapHandler)
+	// Swagger endpoint (disable in production)
+	if getEnv("NODE_ENV", "development") != "production" {
+		r.Get("/swagger/*", httpSwagger.WrapHandler)
+	}
 
 	timeoutContext := time.Duration(2) * time.Second
 

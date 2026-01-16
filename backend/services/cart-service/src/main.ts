@@ -1,19 +1,54 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
+  const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
-  // Swagger Configuration
-  const config = new DocumentBuilder()
-    .setTitle('Cart Service API')
-    .setDescription('The shopping cart service for TokoBapak')
-    .setVersion('1.0')
-    .addTag('cart')
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
 
-  await app.listen(process.env.PORT ?? 3003);
+  // Enable CORS for frontend
+  app.enableCors({
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    credentials: true,
+  });
+
+  // Swagger Configuration (only in non-production)
+  if (process.env.NODE_ENV !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('Cart Service API')
+      .setDescription('The shopping cart service for TokoBapak')
+      .setVersion('1.0')
+      .addTag('cart')
+      .addBearerAuth()
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document);
+  }
+
+  // Global validation pipe with production settings
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      disableErrorMessages: process.env.NODE_ENV === 'production',
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+    }),
+  );
+
+  // Graceful shutdown
+  app.enableShutdownHooks();
+
+  const port = process.env.PORT ?? 3003;
+  await app.listen(port);
+  logger.log(`🚀 Cart Service running on http://localhost:${port}`);
 }
-bootstrap();
+
+bootstrap().catch((error) => {
+  console.error('Failed to start Cart Service:', error);
+  process.exit(1);
+});
