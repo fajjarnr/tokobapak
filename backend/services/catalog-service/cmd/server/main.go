@@ -45,6 +45,10 @@ func main() {
 	categoryUsecase := usecase.NewCategoryUsecase(categoryRepo, timeoutContext)
 	_http.NewCategoryHandler(r, categoryUsecase)
 
+	brandRepo := postgres.NewPostgresBrandRepository(db)
+	brandUsecase := usecase.NewBrandUsecase(brandRepo, timeoutContext)
+	_http.NewBrandHandler(r, brandUsecase)
+
 	port := getEnv("PORT", "3002")
 	fmt.Printf("Catalog Service started on port %s\n", port)
 	
