@@ -39,6 +39,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Category CRUD with hierarchy support
   - SQL Migrations included
 
+#### Backend - Cart Service
+- **Cart Service (NestJS)** - Shopping Cart Management
+  - Redis-backed persistent storage
+  - `ioredis` for high-performance operations
+  - Add/Update/Remove item with quantity logic
+  - Independent microservice structure
+
 
 ### 🚀 Planned
 - Mobile application (React Native + Expo)
