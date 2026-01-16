@@ -32,14 +32,16 @@ export class CartService {
       };
     }
 
-    return JSON.parse(data);
+    return JSON.parse(data) as Cart;
   }
 
   async addToCart(userId: string, itemDto: AddToCartDto): Promise<Cart> {
     const cart = await this.getCart(userId);
-    
+
     const existingItemIndex = cart.items.findIndex(
-      (item) => item.productId === itemDto.productId && item.variantId === itemDto.variantId,
+      (item) =>
+        item.productId === itemDto.productId &&
+        item.variantId === itemDto.variantId,
     );
 
     if (existingItemIndex > -1) {
@@ -61,15 +63,19 @@ export class CartService {
     return cart;
   }
 
-  async updateQuantity(userId: string, itemId: string, quantity: number): Promise<Cart> {
+  async updateQuantity(
+    userId: string,
+    itemId: string,
+    quantity: number,
+  ): Promise<Cart> {
     const cart = await this.getCart(userId);
-    
-    // Naive implementation assuming itemId is productId for now. 
+
+    // Naive implementation assuming itemId is productId for now.
     // Ideally we need a unique cart item ID or composite key logic in the route.
     // Let's assume the controller handles finding the right item, or we simplify:
-    
-    const itemIndex = cart.items.findIndex((item) => item.productId === itemId); 
-    
+
+    const itemIndex = cart.items.findIndex((item) => item.productId === itemId);
+
     if (itemIndex > -1) {
       cart.items[itemIndex].quantity = quantity;
       cart.updatedAt = new Date().toISOString();
@@ -79,11 +85,15 @@ export class CartService {
     return cart;
   }
 
-  async removeItem(userId: string, productId: string, variantId?: string): Promise<Cart> {
+  async removeItem(
+    userId: string,
+    productId: string,
+    variantId?: string,
+  ): Promise<Cart> {
     const cart = await this.getCart(userId);
-    
+
     cart.items = cart.items.filter(
-      (item) => !(item.productId === productId && item.variantId === variantId)
+      (item) => !(item.productId === productId && item.variantId === variantId),
     );
 
     cart.updatedAt = new Date().toISOString();

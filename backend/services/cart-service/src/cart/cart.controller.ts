@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+} from '@nestjs/common';
 import { CartService } from './cart.service';
 import { AddToCartDto } from './dto/add-to-cart.dto';
 import { UpdateQuantityDto } from './dto/update-quantity.dto';
@@ -9,19 +18,22 @@ export class CartController {
 
   // In a real app, userId would come from a JWT guard/decorator
   // For MVP, we will accept it as a header or query param for testing
-  private getUserId(req: any): string {
+  private getUserId(): string {
     // Mock user ID for now if not provided
-    return 'user-123'; 
+    return 'user-123';
   }
 
   @Get()
   async getCart(@Query('userId') userId: string) {
-    return this.cartService.getCart(userId || this.getUserId(null));
+    return this.cartService.getCart(userId || this.getUserId());
   }
 
   @Post('items')
-  async addToCart(@Query('userId') userId: string, @Body() addToCartDto: AddToCartDto) {
-    return this.cartService.addToCart(userId || this.getUserId(null), addToCartDto);
+  async addToCart(
+    @Query('userId') userId: string,
+    @Body() addToCartDto: AddToCartDto,
+  ) {
+    return this.cartService.addToCart(userId || this.getUserId(), addToCartDto);
   }
 
   @Put('items/:productId')
@@ -31,9 +43,9 @@ export class CartController {
     @Body() updateQuantityDto: UpdateQuantityDto,
   ) {
     return this.cartService.updateQuantity(
-      userId || this.getUserId(null), 
-      productId, 
-      updateQuantityDto.quantity
+      userId || this.getUserId(),
+      productId,
+      updateQuantityDto.quantity,
     );
   }
 
@@ -43,11 +55,15 @@ export class CartController {
     @Param('productId') productId: string,
     @Query('variantId') variantId?: string,
   ) {
-    return this.cartService.removeItem(userId || this.getUserId(null), productId, variantId);
+    return this.cartService.removeItem(
+      userId || this.getUserId(),
+      productId,
+      variantId,
+    );
   }
 
   @Delete()
   async clearCart(@Query('userId') userId: string) {
-    return this.cartService.clearCart(userId || this.getUserId(null));
+    return this.cartService.clearCart(userId || this.getUserId());
   }
 }
