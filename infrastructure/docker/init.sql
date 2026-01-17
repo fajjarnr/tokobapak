@@ -1,4 +1,11 @@
+-- TokoBapak Database Initialization
+-- Creates databases for all microservices
+
 CREATE DATABASE tokobapak_products;
 CREATE DATABASE tokobapak_catalog;
 CREATE DATABASE tokobapak_users;
 CREATE DATABASE tokobapak_orders;
+
+-- Grant permissions (if using different users per service in production)
+-- GRANT ALL PRIVILEGES ON DATABASE tokobapak_users TO user_service;
+-- GRANT ALL PRIVILEGES ON DATABASE tokobapak_products TO product_service;

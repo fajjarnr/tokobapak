@@ -1,0 +1,170 @@
+# TokoBapak Infrastructure - Podman Compose
+# Local development environment
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: tokobapak_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: tokobapak
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:alpine
+    container_name: tokobapak_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # User Service (Java Spring Boot)
+  user-service:
+    build:
+      context: ../../backend/services/user-service
+      dockerfile: Containerfile
+    container_name: tokobapak_user_service
+    restart: always
+    ports:
+      - "3006:3006"
+    environment:
+      - PORT=3006
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3006/actuator/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Auth Service (Java Spring Boot)
+  auth-service:
+    build:
+      context: ../../backend/services/auth-service
+      dockerfile: Containerfile
+    container_name: tokobapak_auth_service
+    restart: always
+    ports:
+      - "3007:3007"
+    environment:
+      - PORT=3007
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - JWT_SECRET=${JWT_SECRET:-tokobapak-super-secret-key-for-development-only-change-in-production}
+      - JWT_ACCESS_EXPIRATION=900000
+      - JWT_REFRESH_EXPIRATION=604800000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3007/actuator/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Product Service (NestJS)
+  product-service:
+    build:
+      context: ../../backend/services/product-service
+      dockerfile: Dockerfile
+    container_name: tokobapak_product_service
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=tokobapak_products
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Catalog Service (Go)
+  catalog-service:
+    build:
+      context: ../../backend/services/catalog-service
+      dockerfile: Dockerfile
+    container_name: tokobapak_catalog_service
+    restart: always
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=tokobapak_catalog
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Cart Service (NestJS + Redis)
+  cart-service:
+    build:
+      context: ../../backend/services/cart-service
+      dockerfile: Dockerfile
+    container_name: tokobapak_cart_service
+    restart: always
+    ports:
+      - "3003:3003"
+    environment:
+      - PORT=3003
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:

@@ -1,0 +1,48 @@
+#!/bin/sh
+# Maven Wrapper Bootstrap Script
+# Downloads and runs the Maven Wrapper if not present
+
+set -e
+
+MAVEN_WRAPPER_JAR_URL="https://repo.maven.apache.org/maven2/org/apache/maven/wrapper/maven-wrapper/3.2.0/maven-wrapper-3.2.0.jar"
+MAVEN_WRAPPER_PROPERTIES_URL="https://repo.maven.apache.org/maven2/org/apache/maven/wrapper/maven-wrapper/3.2.0/maven-wrapper-3.2.0.properties"
+
+WRAPPER_DIR=".mvn/wrapper"
+WRAPPER_JAR="$WRAPPER_DIR/maven-wrapper.jar"
+WRAPPER_PROPS="$WRAPPER_DIR/maven-wrapper.properties"
+
+# Create wrapper directory
+mkdir -p "$WRAPPER_DIR"
+
+# Download wrapper jar if not present
+if [ ! -f "$WRAPPER_JAR" ]; then
+    echo "Downloading Maven Wrapper..."
+    if command -v curl > /dev/null 2>&1; then
+        curl -sL -o "$WRAPPER_JAR" "$MAVEN_WRAPPER_JAR_URL"
+    elif command -v wget > /dev/null 2>&1; then
+        wget -q -O "$WRAPPER_JAR" "$MAVEN_WRAPPER_JAR_URL"
+    else
+        echo "Error: curl or wget is required to download Maven Wrapper"
+        exit 1
+    fi
+fi
+
+# Create wrapper properties if not present
+if [ ! -f "$WRAPPER_PROPS" ]; then
+    cat > "$WRAPPER_PROPS" << 'EOF'
+distributionUrl=https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.6/apache-maven-3.9.6-bin.zip
+wrapperUrl=https://repo.maven.apache.org/maven2/org/apache/maven/wrapper/maven-wrapper/3.2.0/maven-wrapper-3.2.0.jar
+EOF
+fi
+
+# Check for Java
+if ! command -v java > /dev/null 2>&1; then
+    echo "Error: Java is required. Please install Java 21 or later."
+    echo "  Ubuntu/Debian: sudo apt install openjdk-21-jdk"
+    echo "  macOS: brew install openjdk@21"
+    echo "  Or use SDKMAN: sdk install java 21-tem"
+    exit 1
+fi
+
+# Run Maven Wrapper
+exec java -jar "$WRAPPER_JAR" "$@"

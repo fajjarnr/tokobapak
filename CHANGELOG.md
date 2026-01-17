@@ -25,6 +25,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Developer Experience**
   - Fixed ESLint configuration for Next.js 15 compatibility
 
+#### Backend - User Service
+- **User Service (Java Spring Boot 3.4)** - User Management Microservice
+  - Spring Boot 3.4.1 + Spring Data JPA + Hibernate
+  - User entity with UUID, roles (CUSTOMER, SELLER, ADMIN)
+  - Full CRUD endpoints with pagination
+  - BCrypt password hashing
+  - Flyway database migrations
+  - OpenAPI/Swagger documentation
+  - Podman Containerfile (multi-stage build)
+
+#### Backend - Auth Service
+- **Auth Service (Java Spring Boot 3.4)** - JWT Authentication Microservice
+  - Spring Security 6.x with stateless JWT configuration
+  - JJWT 0.12.6 for token generation & validation
+  - Access token (15 min) + Refresh token (7 days)
+  - Login, refresh, validate, logout endpoints
+  - UserDetailsService integration
+  - OpenAPI/Swagger documentation
+  - Podman Containerfile (multi-stage build)
+
 #### Backend - Product Service
 - **Product Service (NestJS)** - First backend microservice
   - Full CRUD endpoints with pagination
@@ -45,6 +65,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `ioredis` for high-performance operations
   - Add/Update/Remove item with quantity logic
   - Independent microservice structure
+
+### 🔧 Changed
+
+#### Infrastructure
+- **Migrated from Docker to Podman**
+  - Renamed `docker-compose.yml` to `podman-compose.yml`
+  - Updated all service Dockerfiles to Containerfiles
+  - Added health checks for all services
+  - Updated infrastructure README with Podman commands
 
 
 ### 🚀 Planned
