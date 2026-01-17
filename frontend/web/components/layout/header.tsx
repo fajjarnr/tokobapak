@@ -15,7 +15,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useCartStore } from '@/stores/cart-store'
 import { useAuthStore } from '@/stores/auth-store'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const categories = [
     { name: 'Electronics', path: '/categories?category=electronics' },
@@ -26,8 +26,15 @@ const categories = [
 
 export function Header() {
     const cartItemsCount = useCartStore((state) => state.totalItems())
+    const fetchCart = useCartStore((state) => state.fetchCart)
     const { user, logout, isAuthenticated } = useAuthStore()
     const [isMenuOpen, setIsMenuOpen] = useState(false)
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            fetchCart()
+        }
+    }, [isAuthenticated, fetchCart])
 
     return (
         <header className="sticky top-0 z-50 bg-card shadow-sm">

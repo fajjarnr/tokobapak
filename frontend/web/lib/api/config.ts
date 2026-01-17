@@ -16,19 +16,21 @@ export const API_ENDPOINTS = {
     profile: '/api/v1/users/profile',
     update: '/api/v1/users',
   },
-  
+
   // Product & Catalog Services
   products: {
     list: '/api/v1/products',
     detail: (id: string) => `/api/v1/products/${id}`,
     search: '/api/v1/search/products',
     suggest: '/api/v1/search/suggest',
+    create: '/api/v1/products',
   },
   categories: {
     list: '/api/v1/categories',
     detail: (id: string) => `/api/v1/categories/${id}`,
+    create: '/api/v1/categories',
   },
-  
+
   // Cart Service
   cart: {
     get: '/api/v1/cart',
@@ -37,7 +39,7 @@ export const API_ENDPOINTS = {
     remove: (itemId: string) => `/api/v1/cart/items/${itemId}`,
     clear: '/api/v1/cart',
   },
-  
+
   // Order Service
   orders: {
     create: '/api/v1/orders',
@@ -45,14 +47,14 @@ export const API_ENDPOINTS = {
     detail: (id: string) => `/api/v1/orders/${id}`,
     cancel: (id: string) => `/api/v1/orders/${id}/cancel`,
   },
-  
+
   // Payment Service
   payments: {
     create: '/api/v1/payments',
     status: (id: string) => `/api/v1/payments/${id}`,
     callback: '/api/v1/payments/callback',
   },
-  
+
   // Review Service
   reviews: {
     byProduct: (productId: string) => `/api/v1/products/${productId}/reviews`,
@@ -60,20 +62,20 @@ export const API_ENDPOINTS = {
     create: '/api/v1/reviews',
     helpful: (id: string) => `/api/v1/reviews/${id}/helpful`,
   },
-  
+
   // Recommendation Service
   recommendations: {
     personalized: '/api/v1/recommendations/personalized',
     similar: '/api/v1/recommendations/similar',
     trending: '/api/v1/recommendations/trending',
   },
-  
+
   // Promotion Service
   promotions: {
     active: '/api/v1/promotions/active',
     applyVoucher: '/api/v1/promotions/vouchers/apply',
   },
-  
+
   // Seller Service
   sellers: {
     detail: (id: string) => `/api/v1/sellers/${id}`,

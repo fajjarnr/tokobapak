@@ -27,3 +27,12 @@ export const authApi = {
     return apiClient.post(API_ENDPOINTS.auth.logout)
   }
 }
+
+export const userApi = {
+  getMe: async () => {
+    return apiClient.get(API_ENDPOINTS.users.me)
+  },
+  updateProfile: async (data: any) => {
+    return apiClient.put(API_ENDPOINTS.users.update, data)
+  }
+}

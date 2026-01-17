@@ -30,6 +30,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **User Service** (Spring Boot) - Running on port 3006
 - **Catalog Service** (Go) - Running on port 3002
   - Categories and Brands database migrations
+  
+#### Infrastructure
+- **Frontend Containerization**
+  - Added Dockerfile for Next.js frontend with Bun runtime
+  - Integrated into Podman Compose stack
+  - Configured standalone output for optimized production builds
+
+#### Development Tools
+- **Data Seeding**
+  - Added `scripts/seed-data.ts` for populating categories and products via API
 
 ### 🐛 Fixed
 

@@ -121,17 +121,27 @@ export default function ProductsContent() {
                     </div>
                 ) : data?.data && data.data.length > 0 ? (
                     <div className={`grid gap-6 ${viewMode === 'grid'
-                            ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
-                            : 'grid-cols-1'
+                        ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
+                        : 'grid-cols-1'
                         }`}>
                         {data.data.map((product) => (
                             <ProductCard key={product.id} product={product} />
                         ))}
                     </div>
                 ) : (
-                    <div className="text-center py-20 text-muted-foreground">
-                        <p className="text-lg">No products found.</p>
-                        <Button variant="link" onClick={handleResetFilters}>Clear Filters</Button>
+                    <div className="text-center py-20 text-muted-foreground bg-muted/20 rounded-xl border-dashed border-2">
+                        {(searchQuery || selectedCategories.length > 0 || selectedBrands.length > 0 || priceRange[0] > 0 || priceRange[1] < 10000000) ? (
+                            <>
+                                <p className="text-lg font-medium">Tidak ada produk ditemukan</p>
+                                <p className="text-sm mb-4">Coba ubah kata kunci atau filter pencarian Anda.</p>
+                                <Button variant="outline" onClick={handleResetFilters}>Hapus Filter</Button>
+                            </>
+                        ) : (
+                            <>
+                                <p className="text-lg font-medium">Belum ada produk tersedia</p>
+                                <p className="text-sm">Silakan periksa kembali nanti.</p>
+                            </>
+                        )}
                     </div>
                 )}
 

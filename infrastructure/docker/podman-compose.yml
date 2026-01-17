@@ -643,6 +643,21 @@ services:
       - cart-service
       - auth-service
 
+  # Frontend Web (Customer)
+  frontend-web:
+    build:
+      context: ../../frontend/web
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8080
+    container_name: tokobapak_frontend_web
+    image: localhost/docker_frontend-web
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api-gateway
+
 volumes:
   postgres_data:
   redis_data:

@@ -64,6 +64,23 @@ export interface SearchParams {
   sort?: string;
 }
 
+export interface CreateProductRequest {
+  name: string;
+  description: string;
+  price: number;
+  categoryId: string;
+  images: string[];
+  stock: number;
+  variants?: ProductVariant[];
+  sellerId?: string; // Optional if inferred
+}
+
+export interface CreateCategoryRequest {
+  name: string;
+  image?: string;
+  parentId?: string;
+}
+
 // Product API
 export const productApi = {
   getProducts: async (params?: SearchParams): Promise<ProductsResponse> => {
@@ -85,6 +102,10 @@ export const productApi = {
   getSuggestions: async (query: string): Promise<{ suggestions: string[] }> => {
     return apiClient.get(`${API_ENDPOINTS.products.suggest}?q=${encodeURIComponent(query)}`, { auth: false });
   },
+
+  createProduct: async (data: CreateProductRequest): Promise<Product> => {
+    return apiClient.post<Product>(API_ENDPOINTS.products.create, data);
+  },
 };
 
 // Category API
@@ -96,6 +117,10 @@ export const categoryApi = {
 
   getCategory: async (id: string): Promise<Category> => {
     return apiClient.get<Category>(API_ENDPOINTS.categories.detail(id), { auth: false });
+  },
+
+  createCategory: async (data: CreateCategoryRequest): Promise<Category> => {
+    return apiClient.post<Category>(API_ENDPOINTS.categories.create, data);
   },
 };
 

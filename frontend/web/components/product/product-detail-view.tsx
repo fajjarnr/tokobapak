@@ -36,6 +36,7 @@ import { ProductRecommendations } from '@/components/product/product-recommendat
 import { useProduct } from '@/hooks/use-products'
 import { formatPrice } from '@/lib/utils'
 import { Product } from '@/lib/api'
+import { ProductReviews } from '@/components/product/product-reviews'
 
 interface ProductDetailViewProps {
     id: string
@@ -45,7 +46,7 @@ interface ProductDetailViewProps {
 export function ProductDetailView({ id, initialData }: ProductDetailViewProps) {
     const router = useRouter()
     const { data: product, isLoading, error } = useProduct(id, initialData)
-    
+
     // Auth & Cart Logic
     const { isAuthenticated } = useAuthStore()
     const { addItem: addLocalItem } = useCartStore()
@@ -161,7 +162,7 @@ export function ProductDetailView({ id, initialData }: ProductDetailViewProps) {
                 <div className="w-full lg:w-1/2 space-y-6">
                     <div>
                         <div className="flex items-center gap-2 mb-2">
-                             {product.category && (
+                            {product.category && (
                                 <Badge variant="secondary">{product.category.name}</Badge>
                             )}
                             {product.stock > 0 ? (
@@ -205,11 +206,10 @@ export function ProductDetailView({ id, initialData }: ProductDetailViewProps) {
                                         {variant.options.map((option) => (
                                             <button
                                                 key={option}
-                                                className={`px-4 py-2 rounded-md border text-sm font-medium transition-colors ${
-                                                    selectedVariants[variant.name] === option
-                                                        ? 'border-primary bg-primary text-primary-foreground'
-                                                        : 'border-input hover:bg-accent hover:text-accent-foreground'
-                                                }`}
+                                                className={`px-4 py-2 rounded-md border text-sm font-medium transition-colors ${selectedVariants[variant.name] === option
+                                                    ? 'border-primary bg-primary text-primary-foreground'
+                                                    : 'border-input hover:bg-accent hover:text-accent-foreground'
+                                                    }`}
                                                 onClick={() => setSelectedVariants(prev => ({ ...prev, [variant.name]: option }))}
                                             >
                                                 {option}
@@ -245,13 +245,13 @@ export function ProductDetailView({ id, initialData }: ProductDetailViewProps) {
                             </Button>
                         </div>
                         <div className="flex flex-1 gap-3">
-                            <Button 
-                                className="flex-1" 
-                                size="lg" 
-                                onClick={handleAddToCart} 
+                            <Button
+                                className="flex-1"
+                                size="lg"
+                                onClick={handleAddToCart}
                                 disabled={product.stock === 0 || addToCartMutation.isPending}
                             >
-                                <ShoppingCart className="mr-2 h-5 w-5" /> 
+                                <ShoppingCart className="mr-2 h-5 w-5" />
                                 {product.stock === 0 ? 'Out of Stock' : (addToCartMutation.isPending ? 'Adding...' : 'Add to Cart')}
                             </Button>
                             <Button variant="outline" size="icon" className="h-11 w-11">
@@ -304,10 +304,10 @@ export function ProductDetailView({ id, initialData }: ProductDetailViewProps) {
                         <Plus className="h-4 w-4" />
                     </Button>
                 </div>
-                <Button 
-                    className="flex-1" 
-                    size="lg" 
-                    onClick={handleAddToCart} 
+                <Button
+                    className="flex-1"
+                    size="lg"
+                    onClick={handleAddToCart}
                     disabled={product.stock === 0 || addToCartMutation.isPending}
                 >
                     {addToCartMutation.isPending ? 'Adding...' : `Add - ${formatPrice(product.price * quantity)}`}
@@ -331,10 +331,7 @@ export function ProductDetailView({ id, initialData }: ProductDetailViewProps) {
                         </div>
                     </TabsContent>
                     <TabsContent value="reviews" className="pt-6">
-                       <div className="text-center py-8 text-muted-foreground">
-                            Reviews functionality coming soon. 
-                            {/* Can be enhanced later to fetch reviews using useReviews hook */}
-                       </div>
+                        <ProductReviews productId={product.id} />
                     </TabsContent>
                 </Tabs>
             </div>

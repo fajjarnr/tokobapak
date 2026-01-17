@@ -16,20 +16,20 @@ export function useLogin() {
       if (typeof window !== 'undefined') {
         localStorage.setItem('auth-storage', JSON.stringify({
           state: {
-            token: response.accessToken,
+            token: response.token,
             refreshToken: response.refreshToken,
             user: response.user,
             isAuthenticated: true,
           },
         }));
       }
-      
+
       // Update Zustand store
       setUser({
         id: response.user.id,
         name: response.user.name,
         email: response.user.email,
-        image: response.user.avatarUrl,
+        image: (response.user as any).avatarUrl,
       });
 
       router.push('/');
@@ -47,19 +47,19 @@ export function useRegister() {
       if (typeof window !== 'undefined') {
         localStorage.setItem('auth-storage', JSON.stringify({
           state: {
-            token: response.accessToken,
+            token: response.token,
             refreshToken: response.refreshToken,
             user: response.user,
             isAuthenticated: true,
           },
         }));
       }
-      
+
       setUser({
         id: response.user.id,
         name: response.user.name,
         email: response.user.email,
-        image: response.user.avatarUrl,
+        image: (response.user as any).avatarUrl,
       });
 
       router.push('/');
@@ -104,7 +104,7 @@ export function useUpdateProfile() {
         id: user.id,
         name: user.name,
         email: user.email,
-        image: user.avatarUrl,
+        image: (user as any).avatarUrl,
       });
       queryClient.invalidateQueries({ queryKey: ['user'] });
     },
