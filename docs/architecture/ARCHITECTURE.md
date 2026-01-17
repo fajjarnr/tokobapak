@@ -1,22 +1,97 @@
 # TokoBapak Architecture Documentation
 
+## Table of Contents
+
+1. [System Overview](#system-overview)
+2. [High-Level Architecture](#high-level-architecture)
+3. [Microservices Architecture](#microservices-architecture)
+4. [Service Catalog](#service-catalog)
+5. [Data Architecture](#data-architecture)
+6. [Event-Driven Architecture](#event-driven-architecture)
+7. [Security Architecture](#security-architecture)
+8. [Infrastructure & Deployment](#infrastructure--deployment)
+9. [Monitoring & Observability](#monitoring--observability)
+10. [Scalability Considerations](#scalability-considerations)
+
+---
+
 ## System Overview
 
-TokoBapak is a multi-vendor e-commerce marketplace designed with a microservices architecture to ensure scalability, maintainability, and independent deployment of services.
+TokoBapak is a multi-vendor e-commerce marketplace built with a **microservices architecture** to ensure scalability, maintainability, and independent deployment.
+
+### Key Characteristics
+
+| Aspect | Choice |
+|--------|--------|
+| **Architecture Style** | Microservices + Event-Driven |
+| **API Protocol** | REST + gRPC (internal) |
+| **Message Broker** | Apache Kafka |
+| **Container Runtime** | Docker / Podman |
+| **Orchestration** | Kubernetes |
+| **Languages** | TypeScript, Java, Go, Python |
 
 ---
 
 ## High-Level Architecture
 
-## High-Level Architecture
-
-![System Architecture](../images/system_architecture.png)
-
 ```
-                                    ┌─────────────────────┐
-                                    │   Load Balancer     │
-                                    │    (Nginx/ALB)      │
-                                    └──────────┬──────────┘
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                                    CLIENTS                                        │
+├────────────────────┬────────────────────┬────────────────────────────────────────┤
+│                    │                    │                                         │
+│   ┌────────────┐   │   ┌────────────┐   │   ┌────────────┐                       │
+│   │ Web App    │   │   │ Mobile App │   │   │ Admin      │                       │
+│   │ (Next.js)  │   │   │ (React     │   │   │ Dashboard  │                       │
+│   │ :3000      │   │   │  Native)   │   │   │ :3100      │                       │
+│   └─────┬──────┘   │   └─────┬──────┘   │   └─────┬──────┘                       │
+│         │          │         │          │         │                              │
+└─────────┼──────────┴─────────┼──────────┴─────────┼──────────────────────────────┘
+          │                    │                    │
+          └────────────────────┼────────────────────┘
+                               │ HTTPS
+                    ┌──────────▼──────────┐
+                    │   Load Balancer     │
+                    │   (AWS ALB / Nginx) │
+                    └──────────┬──────────┘
+                               │
+                    ┌──────────▼──────────┐
+                    │    API Gateway      │
+                    │   (Nginx / Kong)    │
+                    │      :8080          │
+                    └──────────┬──────────┘
+                               │
+         ┌─────────────────────┼─────────────────────┐
+         │                     │                     │
+         ▼                     ▼                     ▼
+┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐
+│  Auth Cluster   │   │  Core Services  │   │ Support Services│
+│  ─────────────  │   │  ─────────────  │   │  ─────────────  │
+│  • Auth         │   │  • Product      │   │  • Search       │
+│  • User         │   │  • Catalog      │   │  • Notification │
+│                 │   │  • Cart         │   │  • Media        │
+│                 │   │  • Order        │   │  • Chat         │
+│                 │   │  • Payment      │   │  • Analytics    │
+│                 │   │  • Shipping     │   │                 │
+│                 │   │  • Inventory    │   │                 │
+│                 │   │  • Seller       │   │                 │
+│                 │   │  • Review       │   │                 │
+│                 │   │  • Promotion    │   │                 │
+└────────┬────────┘   └────────┬────────┘   └────────┬────────┘
+         │                     │                     │
+         └─────────────────────┼─────────────────────┘
+                               │
+         ┌─────────────────────┼─────────────────────┐
+         │                     │                     │
+         ▼                     ▼                     ▼
+┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐
+│   PostgreSQL    │   │     Redis       │   │  Elasticsearch  │
+│     :5432       │   │     :6379       │   │     :9200       │
+└─────────────────┘   └─────────────────┘   └─────────────────┘
+                               │
+                    ┌──────────▼──────────┐
+                    │   Apache Kafka      │
+                    │     :9092           │
+                    └─────────────────────┘
 ```
 
 ---
@@ -25,436 +100,422 @@ TokoBapak is a multi-vendor e-commerce marketplace designed with a microservices
 
 ### Design Principles
 
-1. **Single Responsibility**: Each service handles one business domain
-2. **Loose Coupling**: Services communicate via APIs, no direct DB access
-3. **Independent Deployment**: Each service can be deployed independently
-4. **Technology Agnostic**: Use the best technology for each service
-5. **Resilience**: Services handle failures gracefully
+| Principle | Description |
+|-----------|-------------|
+| **Single Responsibility** | Each service handles one business domain |
+| **Loose Coupling** | Services communicate via APIs, no shared database |
+| **Independent Deployment** | Each service deployed independently |
+| **Technology Agnostic** | Best tool for each job |
+| **Resilience** | Graceful degradation on failures |
+| **Observability** | Logs, metrics, traces for all services |
 
-### Service Communication
-
-![Checkout Saga Orchestration](../images/saga_pattern_flow.png)
+### Communication Patterns
 
 ```
-┌─────────────┐      HTTP/REST       ┌─────────────┐
-│   Service A │ ◄──────────────────► │   Service B │
-└─────────────┘                      └─────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                    SYNCHRONOUS (REST/HTTP)                       │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│   ┌──────────┐     Request/Response     ┌──────────┐            │
+│   │ Frontend │ ◄──────────────────────► │ Service  │            │
+│   └──────────┘                          └──────────┘            │
+│                                                                  │
+│   Use Case: Real-time queries, immediate responses              │
+│   Example: GET /products, POST /orders                          │
+└─────────────────────────────────────────────────────────────────┘
 
-┌─────────────┐      Event Bus       ┌─────────────┐
-│   Service A │ ────────────────────► │   Service B │
-└─────────────┘      (Kafka)         └─────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                  ASYNCHRONOUS (Kafka Events)                     │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│   ┌──────────┐  Publish   ┌───────┐  Subscribe  ┌──────────┐   │
+│   │ Service A│ ─────────► │ Kafka │ ─────────► │ Service B│    │
+│   └──────────┘            └───────┘             └──────────┘    │
+│                                                                  │
+│   Use Case: Distributed transactions, eventual consistency      │
+│   Example: order.created → payment.pending → inventory.reserve  │
+└─────────────────────────────────────────────────────────────────┘
 ```
-
-**Synchronous**: REST/HTTP for real-time requests (e.g. Frontend -> API Gateway)
-**Asynchronous**: Kafka for distributed transactions (Saga Pattern) like Checkout Flow.
 
 ---
 
-## Service Architecture Patterns
+## Service Catalog
 
-### NestJS Services (Product, Cart)
+### Overview
+
+| Service | Technology | Port | Database | Description |
+|---------|------------|------|----------|-------------|
+| **auth-service** | Java (Spring Boot) | 3005 | PostgreSQL | JWT authentication, OAuth |
+| **user-service** | Java (Spring Boot) | 3006 | PostgreSQL | User profiles, addresses |
+| **product-service** | NestJS | 3001 | PostgreSQL | Products, variants, media |
+| **catalog-service** | Go | 3002 | PostgreSQL | Categories, brands |
+| **cart-service** | NestJS | 3003 | Redis | Shopping cart management |
+| **order-service** | Java (Spring Boot) | 3007 | PostgreSQL | Order processing |
+| **payment-service** | Java (Spring Boot) | 3008 | PostgreSQL | Payment gateway integration |
+| **shipping-service** | Go | 3009 | PostgreSQL | Courier integration |
+| **inventory-service** | Go | 3011 | PostgreSQL | Stock management |
+| **seller-service** | NestJS | 3012 | PostgreSQL | Seller management |
+| **promotion-service** | Java (Spring Boot) | 3013 | PostgreSQL | Vouchers, promotions |
+| **review-service** | Go | 3014 | PostgreSQL | Product reviews |
+| **search-service** | NestJS | 3010 | Elasticsearch | Full-text search |
+| **notification-service** | NestJS | 3004 | Redis | Email, SMS, Push |
+| **chat-service** | NestJS | 3015 | MongoDB | Real-time messaging |
+| **media-service** | Go | 3016 | S3/R2 | Image/video storage |
+| **recommendation-service** | Python (FastAPI) | 3017 | - | ML recommendations |
+| **analytics-service** | Python (FastAPI) | 3018 | ClickHouse | Business analytics |
+
+### Service Architecture Patterns
+
+#### NestJS Services (TypeScript)
 
 ```
 src/
-├── main.ts                    # Application bootstrap
-├── app.module.ts              # Root module
-├── config/                    # Configuration
-```
-
-### Go Service (Catalog, Inventory) - Clean Architecture
-
-```
-cmd/
-└── server/
-    └── main.go               # Application entry point
-
-internal/
-├── domain/                   # Business entities & interfaces
-├── usecase/                  # Business logic
-├── repository/               # Data access layer
-└── delivery/                 # Transport layer
-```
-
----
-
-## Data Architecture
-
-### Database Strategy
-
-| Service | Database | Type | Purpose |
-|---------|----------|------|---------|
-| Product | PostgreSQL | RDBMS | Products, variants, media |
-| Catalog | PostgreSQL | RDBMS | Categories, brands |
-| Cart | Redis | Key-Value | Session-based cart data |
-| User | PostgreSQL | RDBMS | User accounts |
-| Order | PostgreSQL | RDBMS | Orders, transactions |
-| Inventory | PostgreSQL | RDBMS | Stock management |
-| Search | Elasticsearch | Search | Full-text search |
-
-### Database Per Service Pattern
-
-Each service owns its own database schema to ensure loose coupling.
-
----
-
-## Entity Relationship Diagrams
-
-### Core Services ERD
-
-![Core Services ERD](../images/core_services_erd.png)
-
-### Text-Based ERD Reference
-
-#### Product Service
-
-                                               │
-                     ┌─────────────────────────┼─────────────────────────┐
-                     │                         │                         │
-           ┌─────────▼─────────┐    ┌─────────▼─────────┐    ┌─────────▼─────────┐
-           │   Frontend Web    │    │   Frontend Admin  │    │  Frontend Mobile  │
-           │    (Next.js)      │    │    (Next.js)      │    │  (React Native)   │
-           │     :3000         │    │      :3100        │    │       App         │
-           └─────────┬─────────┘    └─────────┬─────────┘    └─────────┬─────────┘
-                     │                         │                         │
-                     └─────────────────────────┼─────────────────────────┘
-                                               │
-                                    ┌──────────▼──────────┐
-                                    │     API Gateway     │
-                                    │       (Kong)        │
-                                    │       :8000         │
-                                    └──────────┬──────────┘
-                                               │
-        ┌──────────────────────────────────────┼──────────────────────────────────────┐
-        │                  │                   │                   │                  │
-┌───────▼───────┐  ┌───────▼───────┐  ┌───────▼───────┐  ┌───────▼───────┐  ┌───────▼───────┐
-│   Product     │  │   Catalog     │  │    Cart       │  │    Order      │  │   Payment     │
-│   Service     │  │   Service     │  │   Service     │  │   Service     │  │   Service     │
-│  (NestJS)     │  │    (Go)       │  │  (NestJS)     │  │ (Spring Boot) │  │ (Spring Boot) │
-│    :3001      │  │    :3002      │  │    :3003      │  │    :3004      │  │    :3005      │
-└───────┬───────┘  └───────┬───────┘  └───────┬───────┘  └───────┬───────┘  └───────┬───────┘
-        │                  │                   │                  │                  │
-        └──────────────────┼───────────────────┼──────────────────┼──────────────────┘
-                           │                   │                  │
-              ┌────────────▼───────────────────▼──────────────────▼────────────┐
-              │                          Databases                              │
-              │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
-              │  │ PostgreSQL  │  │    Redis    │  │Elasticsearch│             │
-              │  │   :5432     │  │    :6379    │  │   :9200     │             │
-              │  └─────────────┘  └─────────────┘  └─────────────┘             │
-              └────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Microservices Architecture
-
-### Design Principles
-
-1. **Single Responsibility**: Each service handles one business domain
-2. **Loose Coupling**: Services communicate via APIs, no direct DB access
-3. **Independent Deployment**: Each service can be deployed independently
-4. **Technology Agnostic**: Use the best technology for each service
-5. **Resilience**: Services handle failures gracefully
-
-### Service Communication
-
-```
-┌─────────────┐      HTTP/REST       ┌─────────────┐
-│   Service A │ ◄──────────────────► │   Service B │
-└─────────────┘                      └─────────────┘
-
-┌─────────────┐      Event Bus       ┌─────────────┐
-│   Service A │ ────────────────────► │   Service B │
-└─────────────┘      (Kafka)         └─────────────┘
-```
-
-**Synchronous**: REST/HTTP for real-time requests
-**Asynchronous**: Kafka/RabbitMQ for event-driven communication (planned)
-
----
-
-## Service Architecture Patterns
-
-### NestJS Services (Product, Cart)
-
-```
-src/
-├── main.ts                    # Application bootstrap
-├── app.module.ts              # Root module
-├── config/                    # Configuration
-│   └── database.config.ts
-├── common/                    # Shared code
-│   ├── filters/              # Exception filters
-│   ├── guards/               # Auth guards
-│   ├── interceptors/         # Request/response interceptors
-│   └── decorators/           # Custom decorators
+├── main.ts                     # Bootstrap application
+├── app.module.ts               # Root module
+├── config/                     # Configuration
+│   ├── database.config.ts
+│   └── kafka.config.ts
+├── common/                     # Shared utilities
+│   ├── filters/               # Exception filters
+│   ├── guards/                # Auth guards
+│   ├── interceptors/          # Logging, transform
+│   └── decorators/            # Custom decorators
 └── modules/
     └── <feature>/
-        ├── dto/              # Data Transfer Objects
-        ├── entities/         # Database entities
+        ├── dto/               # Request/Response DTOs
+        ├── entities/          # TypeORM entities
         ├── <feature>.controller.ts
         ├── <feature>.service.ts
         └── <feature>.module.ts
 ```
 
-### Go Service (Catalog) - Clean Architecture
+#### Go Services (Clean Architecture)
 
 ```
 cmd/
 └── server/
-    └── main.go               # Application entry point
+    └── main.go                # Entry point
 
 internal/
-├── domain/                   # Business entities & interfaces
+├── domain/                    # Business entities & interfaces
 │   ├── category.go
-│   ├── brand.go
 │   └── errors.go
-├── usecase/                  # Business logic
-│   ├── category_uc.go
-│   └── brand_uc.go
-├── repository/               # Data access layer
+├── usecase/                   # Business logic (application layer)
+│   └── category_uc.go
+├── repository/                # Data access (infrastructure)
 │   └── postgres/
-│       ├── category_repo.go
-│       └── brand_repo.go
-└── delivery/                 # Transport layer
+│       └── category_repo.go
+└── delivery/                  # Transport layer
     └── http/
-        ├── handler.go
-        └── brand_handler.go
+        └── handler.go
+
+pkg/                           # Shared packages
+└── utils/
+```
+
+#### Java Services (Spring Boot)
+
+```
+src/main/java/id/tokobapak/<service>/
+├── <Service>Application.java    # Main class
+├── config/                      # Configuration
+│   ├── SecurityConfig.java
+│   └── KafkaConfig.java
+├── controller/                  # REST controllers
+├── service/                     # Business logic
+├── repository/                  # JPA repositories
+├── domain/                      # Entities
+├── dto/                         # Data transfer objects
+├── event/                       # Kafka events
+└── exception/                   # Custom exceptions
 ```
 
 ---
 
 ## Data Architecture
 
-### Database Strategy
-
-| Service | Database | Type | Purpose |
-|---------|----------|------|---------|
-| Product | PostgreSQL | RDBMS | Products, variants, media |
-| Catalog | PostgreSQL | RDBMS | Categories, brands |
-| Cart | Redis | Key-Value | Session-based cart data |
-| User | PostgreSQL | RDBMS | User accounts |
-| Order | PostgreSQL | RDBMS | Orders, transactions |
-| Search | Elasticsearch | Search | Full-text search |
-
-### Database Per Service Pattern
+### Database Strategy (Database per Service)
 
 ```
-┌─────────────────┐     ┌─────────────────┐
-│ Product Service │     │ Catalog Service │
-└────────┬────────┘     └────────┬────────┘
-         │                       │
-         ▼                       ▼
-┌─────────────────┐     ┌─────────────────┐
-│ tokobapak_      │     │ tokobapak_      │
-│ products        │     │ catalog         │
-│ (PostgreSQL)    │     │ (PostgreSQL)    │
-└─────────────────┘     └─────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                    PostgreSQL Databases                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
+│  │ tokobapak_   │  │ tokobapak_   │  │ tokobapak_   │          │
+│  │ users        │  │ products     │  │ catalog      │          │
+│  └──────────────┘  └──────────────┘  └──────────────┘          │
+│                                                                  │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
+│  │ tokobapak_   │  │ tokobapak_   │  │ tokobapak_   │          │
+│  │ orders       │  │ payments     │  │ shipping     │          │
+│  └──────────────┘  └──────────────┘  └──────────────┘          │
+│                                                                  │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
+│  │ tokobapak_   │  │ tokobapak_   │  │ tokobapak_   │          │
+│  │ inventory    │  │ sellers      │  │ promotions   │          │
+│  └──────────────┘  └──────────────┘  └──────────────┘          │
+│                                                                  │
+│  ┌──────────────┐                                               │
+│  │ tokobapak_   │                                               │
+│  │ reviews      │                                               │
+│  └──────────────┘                                               │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-Benefits:
-- Independent schema evolution
-- Service isolation
-- Optimized for service needs
-- Independent scaling
+### Data Storage Types
+
+| Storage Type | Technology | Use Case |
+|--------------|------------|----------|
+| **Relational** | PostgreSQL 16 | Transactional data (users, orders) |
+| **Key-Value** | Redis | Caching, sessions, cart |
+| **Document** | MongoDB | Chat messages |
+| **Search** | Elasticsearch 8 | Full-text product search |
+| **Object Storage** | S3 / Cloudflare R2 | Images, videos |
+| **Analytics** | ClickHouse | Event analytics |
+
+### Caching Strategy
+
+```
+┌──────────────┐     Cache Check    ┌──────────────┐
+│    Client    │ ─────────────────► │    Redis     │
+└──────────────┘                    └──────┬───────┘
+                                           │
+                              ┌────────────┼────────────┐
+                              │ HIT        │           │ MISS
+                              ▼            │           ▼
+                       ┌──────────┐        │    ┌──────────────┐
+                       │  Return  │        │    │  PostgreSQL  │
+                       └──────────┘        │    └──────┬───────┘
+                                          │           │
+                                          │    ┌──────▼───────┐
+                                          │    │ Cache Result │
+                                          │    └──────┬───────┘
+                                          │           │
+                                          └───────────┘
+```
+
+**Cache TTLs:**
+- Categories: 5 minutes
+- Product details: 1 minute
+- User session: 24 hours
+- Cart: Until checkout
 
 ---
 
-## Entity Relationship Diagrams
+## Event-Driven Architecture
 
-### Product Service ERD
+### Kafka Topics
 
-```
-┌─────────────────────────────────────────────────────┐
-│                      products                        │
-├─────────────────────────────────────────────────────┤
-│ id           : uuid (PK)                            │
-│ seller_id    : uuid (FK → users)                    │
-│ name         : varchar(255)                          │
-│ slug         : varchar(255) UNIQUE                   │
-│ description  : text                                  │
-│ price        : decimal(15,2)                         │
-│ discount_price: decimal(15,2)                        │
-│ category_id  : uuid (FK → categories)               │
-│ brand_id     : uuid (FK → brands)                   │
-│ status       : enum                                  │
-│ attributes   : jsonb                                 │
-│ weight       : decimal(8,2)                          │
-│ dimensions   : jsonb                                 │
-│ view_count   : integer                               │
-│ rating       : decimal(3,2)                          │
-│ review_count : integer                               │
-│ created_at   : timestamp                             │
-│ updated_at   : timestamp                             │
-└───────────────────────┬─────────────────────────────┘
-                        │
-         ┌──────────────┼──────────────┐
-         │              │              │
-         ▼              ▼              ▼
-┌─────────────┐  ┌─────────────┐  ┌─────────────┐
-│  variants   │  │    media    │  │   reviews   │
-├─────────────┤  ├─────────────┤  ├─────────────┤
-│ id          │  │ id          │  │ id          │
-│ product_id  │  │ product_id  │  │ product_id  │
-│ sku         │  │ url         │  │ user_id     │
-│ name        │  │ type        │  │ rating      │
-│ price       │  │ order       │  │ comment     │
-│ stock       │  │ alt         │  │ created_at  │
-│ attributes  │  │ created_at  │  └─────────────┘
-│ is_active   │  └─────────────┘
-│ created_at  │
-│ updated_at  │
-└─────────────┘
-```
+| Topic | Producer | Consumers | Purpose |
+|-------|----------|-----------|---------|
+| `user.registered` | auth-service | notification-service | Welcome email |
+| `order.created` | order-service | payment-service, cart-service | Create payment, clear cart |
+| `order.confirmed` | order-service | inventory-service, notification-service | Reserve stock, notify user |
+| `payment.completed` | payment-service | order-service, notification-service | Confirm order, send receipt |
+| `order.shipped` | order-service | inventory-service, notification-service | Deduct stock, send tracking |
+| `seller.approved` | seller-service | auth-service, notification-service | Upgrade role, notify |
+| `review.created` | review-service | product-service | Update product rating |
+| `product.updated` | product-service | search-service | Re-index search |
 
-### Catalog Service ERD
+### Saga Pattern (Checkout Flow)
 
 ```
-┌─────────────────────────────────────┐
-│             categories               │
-├─────────────────────────────────────┤
-│ id           : uuid (PK)            │
-│ name         : varchar(255)          │
-│ slug         : varchar(255) UNIQUE   │
-│ description  : text                  │
-│ parent_id    : uuid (FK → self)     │◄───┐
-│ image_url    : text                  │    │ Self-referential
-│ icon_url     : text                  │    │ for hierarchy
-│ display_order: integer               │    │
-│ is_active    : boolean               │────┘
-│ created_at   : timestamp             │
-│ updated_at   : timestamp             │
-└─────────────────────────────────────┘
-
-┌─────────────────────────────────────┐
-│              brands                  │
-├─────────────────────────────────────┤
-│ id           : uuid (PK)            │
-│ name         : varchar(255)          │
-│ slug         : varchar(255) UNIQUE   │
-│ logo_url     : text                  │
-│ is_active    : boolean               │
-│ created_at   : timestamp             │
-│ updated_at   : timestamp             │
-└─────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                     CHECKOUT SAGA ORCHESTRATION                   │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                   │
+│   ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐      │
+│   │ Create  │───►│ Reserve │───►│ Create  │───►│ Clear   │      │
+│   │ Order   │    │ Stock   │    │ Payment │    │ Cart    │      │
+│   └────┬────┘    └────┬────┘    └────┬────┘    └────┬────┘      │
+│        │              │              │              │            │
+│        │              │              │              ▼            │
+│        │              │              │         ┌─────────┐       │
+│        │              │              └────────►│ SUCCESS │       │
+│        │              │                        └─────────┘       │
+│        │              │                                          │
+│   ─────┼──────────────┼──────────── ON FAILURE ─────────────     │
+│        │              │                                          │
+│        │              ▼                                          │
+│        │         ┌─────────┐                                     │
+│        │         │ Release │  (Compensating Transaction)         │
+│        │         │ Stock   │                                     │
+│        │         └────┬────┘                                     │
+│        │              │                                          │
+│        ▼              ▼                                          │
+│   ┌─────────┐    ┌─────────┐                                     │
+│   │ Cancel  │───►│ FAILED  │                                     │
+│   │ Order   │    └─────────┘                                     │
+│   └─────────┘                                                    │
+│                                                                   │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## Security Architecture
 
-### Authentication Flow (Planned)
+### Authentication Flow
 
 ```
-┌──────────┐      1. Login        ┌──────────────┐
-│  Client  │ ────────────────────► │ Auth Service │
-└──────────┘                      └──────┬───────┘
-     │                                   │
-     │                            2. Verify credentials
-     │                                   │
-     │                            ┌──────▼───────┐
-     │                            │ User Service │
-     │                            └──────┬───────┘
-     │                                   │
-     │      3. JWT Token                 │
-     ◄───────────────────────────────────┘
-     │
-     │      4. API Request + JWT
-     ▼
-┌──────────────┐      5. Verify JWT    ┌──────────────┐
-│  API Gateway │ ────────────────────► │ Auth Service │
-└──────┬───────┘                      └──────────────┘
-       │
-       │      6. Forward to service
-       ▼
-┌──────────────┐
-│   Service    │
-└──────────────┘
+┌────────────┐                                    ┌────────────┐
+│   Client   │                                    │Auth Service│
+└─────┬──────┘                                    └─────┬──────┘
+      │                                                 │
+      │  1. POST /auth/login {email, password}         │
+      │────────────────────────────────────────────────►│
+      │                                                 │
+      │                          2. Verify credentials  │
+      │                          3. Generate JWT tokens │
+      │                                                 │
+      │  4. {accessToken, refreshToken, user}          │
+      │◄────────────────────────────────────────────────│
+      │                                                 │
+      │  5. Request + Authorization: Bearer {token}     │
+      │────────────────────────────────────────────────►│ API Gateway
+      │                                                 │
+      │                          6. Validate JWT        │
+      │                          7. Forward to service  │
+      │                                                 │
+      │  8. Response                                    │
+      │◄────────────────────────────────────────────────│
 ```
 
 ### Security Measures
 
-| Layer | Measure |
-|-------|---------|
-| Transport | HTTPS/TLS |
-| Authentication | JWT tokens |
-| Authorization | Role-based access (RBAC) |
-| Input | Validation pipes |
-| Database | Prepared statements |
-| Secrets | Environment variables |
-| CORS | Configured origins |
+| Layer | Implementation |
+|-------|----------------|
+| **Transport** | TLS 1.3 (HTTPS everywhere) |
+| **Authentication** | JWT with RS256 signing |
+| **Authorization** | Role-based access control (RBAC) |
+| **API Gateway** | Rate limiting, IP whitelist |
+| **Input Validation** | Zod (frontend), class-validator (NestJS) |
+| **SQL Injection** | Parameterized queries, ORM |
+| **XSS** | Content Security Policy |
+| **CORS** | Strict origin configuration |
+| **Secrets** | Kubernetes Secrets / Vault |
+
+### User Roles
+
+| Role | Description | Permissions |
+|------|-------------|-------------|
+| `CUSTOMER` | Regular buyer | Browse, purchase, review |
+| `SELLER` | Store owner | + Manage products, process orders |
+| `ADMIN` | Platform staff | + Manage users, approve sellers |
+| `SUPER_ADMIN` | System admin | Full access |
 
 ---
 
-## Deployment Architecture
+## Infrastructure & Deployment
 
-### Container Strategy
+### Container Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Kubernetes Cluster                        │
-│                                                              │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │                    Namespace: tokobapak              │    │
-│  │                                                      │    │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  │    │
-│  │  │  Deployment │  │  Deployment │  │  Deployment │  │    │
-│  │  │  product-   │  │  catalog-   │  │  cart-      │  │    │
-│  │  │  service    │  │  service    │  │  service    │  │    │
-│  │  │  replicas:3 │  │  replicas:2 │  │  replicas:2 │  │    │
-│  │  └─────────────┘  └─────────────┘  └─────────────┘  │    │
-│  │                                                      │    │
-│  │  ┌─────────────┐  ┌─────────────┐                   │    │
-│  │  │  Service    │  │  Service    │                   │    │
-│  │  │  ClusterIP  │  │  ClusterIP  │                   │    │
-│  │  └─────────────┘  └─────────────┘                   │    │
-│  │                                                      │    │
-│  │  ┌─────────────────────────────────────────────┐    │    │
-│  │  │              Ingress Controller              │    │    │
-│  │  │           (nginx / Kong Gateway)            │    │    │
-│  │  └─────────────────────────────────────────────┘    │    │
-│  └─────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                      Kubernetes Cluster                           │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                   │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │                 Namespace: tokobapak-prod                    │ │
+│  │                                                              │ │
+│  │  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐   │ │
+│  │  │  Deployment   │  │  Deployment   │  │  Deployment   │   │ │
+│  │  │ product-svc   │  │ order-svc     │  │ payment-svc   │   │ │
+│  │  │ replicas: 3   │  │ replicas: 3   │  │ replicas: 2   │   │ │
+│  │  └───────────────┘  └───────────────┘  └───────────────┘   │ │
+│  │                                                              │ │
+│  │  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐   │ │
+│  │  │ Service       │  │ Service       │  │ Service       │   │ │
+│  │  │ ClusterIP     │  │ ClusterIP     │  │ ClusterIP     │   │ │
+│  │  └───────────────┘  └───────────────┘  └───────────────┘   │ │
+│  │                                                              │ │
+│  │  ┌─────────────────────────────────────────────────────┐    │ │
+│  │  │           Ingress (nginx-ingress-controller)         │    │ │
+│  │  └─────────────────────────────────────────────────────┘    │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+│                                                                   │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │                 Namespace: tokobapak-data                    │ │
+│  │                                                              │ │
+│  │  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐   │ │
+│  │  │ StatefulSet   │  │ StatefulSet   │  │ StatefulSet   │   │ │
+│  │  │ PostgreSQL    │  │ Redis         │  │ Kafka         │   │ │
+│  │  │ (HA Patroni)  │  │ (Sentinel)    │  │ (Strimzi)     │   │ │
+│  │  └───────────────┘  └───────────────┘  └───────────────┘   │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
-### Docker Images
+### Docker Image Strategy
 
-| Service | Base Image | Size |
-|---------|------------|------|
-| Product | node:22-alpine | ~200MB |
-| Catalog | golang:alpine | ~15MB |
-| Cart | node:22-alpine | ~180MB |
+| Service Type | Base Image | Final Size |
+|--------------|------------|------------|
+| NestJS | node:22-alpine | ~180MB |
+| Go | scratch / alpine | ~15MB |
+| Java | eclipse-temurin:21-jre-alpine | ~200MB |
+| Python | python:3.12-slim | ~150MB |
+
+### CI/CD Pipeline
+
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│    Push     │───►│    Build    │───►│    Test     │───►│   Deploy    │
+│  (GitHub)   │    │  (Docker)   │    │ (Unit/E2E)  │    │ (Kubernetes)│
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+                          │                  │
+                          ▼                  ▼
+                   ┌─────────────┐    ┌─────────────┐
+                   │   Push to   │    │   Quality   │
+                   │   Registry  │    │    Gate     │
+                   └─────────────┘    └─────────────┘
+```
 
 ---
 
 ## Monitoring & Observability
 
-### Metrics Stack (Planned)
+### Observability Stack
 
 ```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  Services   │────►│ Prometheus  │────►│   Grafana   │
-│  (metrics)  │     │  (collect)  │     │ (visualize) │
-└─────────────┘     └─────────────┘     └─────────────┘
-```
-
-### Logging Stack
-
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  Services   │────►│ Fluentd/    │────►│Elasticsearch│
-│   (logs)    │     │ Logstash    │     │   Kibana    │
-└─────────────┘     └─────────────┘     └─────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                        OBSERVABILITY                             │
+├──────────────────┬──────────────────┬────────────────────────────┤
+│     METRICS      │      LOGS        │         TRACES             │
+├──────────────────┼──────────────────┼────────────────────────────┤
+│                  │                  │                            │
+│  ┌────────────┐  │  ┌────────────┐  │  ┌────────────┐           │
+│  │ Prometheus │  │  │ Fluent Bit │  │  │   Jaeger   │           │
+│  └─────┬──────┘  │  └─────┬──────┘  │  └─────┬──────┘           │
+│        │         │        │         │        │                   │
+│        ▼         │        ▼         │        ▼                   │
+│  ┌────────────┐  │  ┌────────────┐  │  ┌────────────┐           │
+│  │  Grafana   │  │  │   Loki     │  │  │   Tempo    │           │
+│  │ Dashboards │  │  │  (Storage) │  │  │  (Storage) │           │
+│  └────────────┘  │  └────────────┘  │  └────────────┘           │
+│                  │                  │                            │
+└──────────────────┴──────────────────┴────────────────────────────┘
 ```
 
 ### Key Metrics
 
-- Request latency (p50, p95, p99)
-- Error rate
-- Request throughput
-- Database connection pool
-- Redis cache hit ratio
-- CPU/Memory usage
+| Category | Metrics |
+|----------|---------|
+| **Latency** | p50, p95, p99 request duration |
+| **Traffic** | Requests per second |
+| **Errors** | Error rate, 4xx, 5xx |
+| **Saturation** | CPU, Memory, Disk usage |
+| **Business** | Orders/hour, GMV, Active users |
+
+### Alerting Rules
+
+| Alert | Condition | Severity |
+|-------|-----------|----------|
+| High Error Rate | 5xx > 1% for 5min | Critical |
+| High Latency | p99 > 3s for 5min | Warning |
+| Service Down | Health check fail | Critical |
+| Low Disk Space | < 10% available | Warning |
+| Database Connections | Pool > 80% | Warning |
 
 ---
 
@@ -462,48 +523,42 @@ Benefits:
 
 ### Horizontal Scaling
 
-| Service | Scaling Trigger | Strategy |
-|---------|-----------------|----------|
-| Product | CPU > 70% | Add replicas |
-| Catalog | CPU > 70% | Add replicas |
-| Cart | Redis connections | Add replicas |
-| API Gateway | Request rate | Add nodes |
+| Service | Scaling Trigger | Min/Max Pods |
+|---------|-----------------|--------------|
+| product-service | CPU > 70% | 2 / 10 |
+| order-service | CPU > 70% | 3 / 15 |
+| cart-service | Connections > 1000 | 2 / 8 |
+| search-service | CPU > 60% | 2 / 10 |
+| API Gateway | RPS > 10000 | 3 / 20 |
 
-### Caching Strategy
+### Database Scaling
 
-```
-┌──────────┐      ┌──────────┐      ┌──────────┐
-│  Client  │─────►│  Redis   │─────►│  Database│
-└──────────┘      │  Cache   │      └──────────┘
-                  └──────────┘
-                       │
-                  Cache Hit → Return
-                  Cache Miss → Query DB → Cache → Return
-```
+| Strategy | Implementation |
+|----------|----------------|
+| **Read Replicas** | PostgreSQL streaming replication |
+| **Connection Pooling** | PgBouncer |
+| **Partitioning** | Orders by date, Products by category |
+| **Sharding** | Future: by seller_id for large datasets |
 
----
+### Performance Targets
 
-## Future Enhancements
-
-### Phase 2 Services
-- Order Service (Java/Spring Boot)
-- Payment Service (Java/Spring Boot)
-- User/Auth Service (Java/Spring Boot)
-- Notification Service (NestJS)
-
-### Phase 3 Services
-- Search Service (NestJS + Elasticsearch)
-- Recommendation Service (Python/FastAPI)
-- Analytics Service (Python/FastAPI)
-- Chat Service (NestJS + Socket.io)
-
-### Infrastructure Roadmap
-- [ ] Kubernetes deployment (Helm charts)
-- [ ] CI/CD pipelines (GitHub Actions)
-- [ ] Monitoring (Prometheus + Grafana)
-- [ ] Distributed tracing (Jaeger)
-- [ ] Message queue (Kafka/RabbitMQ)
+| Metric | Target |
+|--------|--------|
+| API Latency (p95) | < 200ms |
+| Homepage Load | < 2s |
+| Search Results | < 500ms |
+| Checkout Complete | < 3s |
+| System Uptime | 99.9% |
 
 ---
 
-*Document Version: 1.0 | Last Updated: January 2026*
+## Related Documentation
+
+- **[Sequence Diagrams](./SEQUENCE_DIAGRAMS.md)** - Detailed flow diagrams
+- **[Database ERD](../database/DATABASE.md)** - Entity relationships
+- **[Environment Variables](../ENVIRONMENT_VARIABLES.md)** - Configuration reference
+- **[API Documentation](../api/API_DOCUMENTATION.md)** - API endpoints
+
+---
+
+*Document Version: 2.0 | Last Updated: January 2026*
