@@ -373,6 +373,91 @@ services:
       retries: 3
       start_period: 10s
 
+  # Elasticsearch
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
+    container_name: tokobapak_elasticsearch
+    restart: always
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -s http://localhost:9200/_cluster/health | grep -q 'green\\|yellow'",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Inventory Service (Go)
+  inventory-service:
+    build:
+      context: ../../backend/services/inventory-service
+      dockerfile: Dockerfile
+    container_name: tokobapak_inventory_service
+    restart: always
+    ports:
+      - "3011:3011"
+    environment:
+      - PORT=3011
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/tokobapak_inventory?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3011/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Search Service (NestJS + Elasticsearch)
+  search-service:
+    build:
+      context: ../../backend/services/search-service
+      dockerfile: Dockerfile
+    container_name: tokobapak_search_service
+    restart: always
+    ports:
+      - "3012:3012"
+    environment:
+      - PORT=3012
+      - ELASTICSEARCH_NODE=http://elasticsearch:9200
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3012/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
 volumes:
   postgres_data:
   redis_data:
+  elasticsearch_data:

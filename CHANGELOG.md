@@ -86,6 +86,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Verified purchase flag
   - PostgreSQL with pgx driver
 
+#### Backend - Inventory Service
+- **Inventory Service (Go 1.22)** - Stock Management
+  - Transactional stock operations with pgx
+  - Stock reservation for orders
+  - Stock movements audit trail
+  - Low stock threshold alerts
+
+#### Backend - Search Service
+- **Search Service (NestJS 10)** - Full-text Search
+  - Elasticsearch 8.x integration
+  - Faceted search (category, brand, price)
+  - Fuzzy matching and auto-suggest
+  - Product indexing API
+
 #### Backend - Product Service
 - **Product Service (NestJS)** - First backend microservice
   - Full CRUD endpoints with pagination
