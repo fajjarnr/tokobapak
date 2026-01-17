@@ -20,37 +20,63 @@ type OrderCreatedEvent struct {
 	Items       []struct {
 		ProductId uuid.UUID `json:"productId"`
 		Quantity  int       `json:"quantity"`
-	} `json:"items"` // Assuming items are included in the event payload
+	} `json:"items"`
 }
 
-type KafkaConsumer struct {
+type StockReservedEvent struct {
+	OrderID uuid.UUID `json:"orderId"`
+	Status  string    `json:"status"` // "RESERVED"
+}
+
+type StockReservationFailedEvent struct {
+	OrderID uuid.UUID `json:"orderId"`
+	Reason  string    `json:"reason"`
+	Status  string    `json:"status"` // "FAILED"
+}
+
+type EventManager struct {
 	reader *kafka.Reader
+	writer *kafka.Writer
 	svc    *service.InventoryService
 }
 
-func NewKafkaConsumer(brokers []string, topic string, groupID string, svc *service.InventoryService) *KafkaConsumer {
+func NewEventManager(brokers []string, topic string, groupID string, svc *service.InventoryService) *EventManager {
 	reader := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:  brokers,
-		Topic:    topic,
-		GroupID:  groupID,
-		MinBytes: 10e3, // 10KB
-		MaxBytes: 10e6, // 10MB
+		Brokers:   brokers,
+		Topic:     topic,
+		GroupID:   groupID,
+		MinBytes:  10e3, // 10KB
+		MaxBytes:  10e6, // 10MB
+        MaxWait:   1 * time.Second,
 	})
 
-	return &KafkaConsumer{
+	// Writer checks outgoing topic "inventory.events" (or similar)
+	writer := &kafka.Writer{
+		Addr:     kafka.TCP(brokers...),
+		Topic:    "order.events", // Sending replies to a common order events topic for Order Service to consume
+		Balancer: &kafka.LeastBytes{},
+	}
+
+	return &EventManager{
 		reader: reader,
+		writer: writer,
 		svc:    svc,
 	}
 }
 
-func (c *KafkaConsumer) Start(ctx context.Context) {
+func (c *EventManager) Start(ctx context.Context) {
 	slog.Info("Starting Kafka consumer", "topic", c.reader.Config().Topic)
 	go func() {
 		for {
 			m, err := c.reader.ReadMessage(ctx)
 			if err != nil {
-				slog.Error("Failed to read message", "error", err)
-				break
+				// slog.Error("Failed to read message", "error", err)
+                // Continue or break based on error type. EOF means stop.
+                if ctx.Err() != nil {
+                    break
+                }
+                time.Sleep(1 * time.Second)
+				continue
 			}
 
 			slog.Info("Received message", "topic", m.Topic, "partition", m.Partition, "offset", m.Offset)
@@ -58,13 +84,12 @@ func (c *KafkaConsumer) Start(ctx context.Context) {
 			// Process Message (Saga Orchestration Step)
 			if err := c.handleMessage(ctx, m.Value); err != nil {
 				slog.Error("Failed to process message", "error", err)
-				// TODO: Implement retry logic or DLQ (Dead Letter Queue)
 			}
 		}
 	}()
 }
 
-func (c *KafkaConsumer) handleMessage(ctx context.Context, value []byte) error {
+func (c *EventManager) handleMessage(ctx context.Context, value []byte) error {
 	var event OrderCreatedEvent
 	if err := json.Unmarshal(value, &event); err != nil {
 		return err
@@ -72,31 +97,14 @@ func (c *KafkaConsumer) handleMessage(ctx context.Context, value []byte) error {
 
 	slog.Info("Processing OrderCreatedEvent", "orderId", event.OrderID)
 
-	// Saga: Reserve Stock for each item
-	// Note: Ideally request struct should match domain
-	// For simplicity, we loop items and reserve one by one (Not atomic, risky!)
-	// Better: ReserveStockBatch logic in Service.
-	
-	// Assuming event payload structure from OrderService (Java) needs to be checked.
-	// OrderService Java publishes `OrderCreatedEvent` but does it include items?
-	// Based on OrderService.java:64, it builds event via Builder but I didn't see `items` field being set effectively.
-	// I need to verify OrderCreatedEvent.java definition.
-	
-	// If items are missing in event, we must fetch them from Order Service (Sync Call) OR enrich the event.
-	// Let's assume for now we need to fetch logic or we assume event has it.
-	
-	// Stub implementation calling ReserveStock
-    logReservation := func(item struct{ProductId uuid.UUID; Quantity int}, err error) {
-        if err != nil {
-			slog.Error("Stock Reservation Failed", "orderId", event.OrderID, "productId", item.ProductId, "error", err)
-            // TODO: Publish StockReservationFailed Event to revert Order
-        } else {
-            slog.Info("Stock Reserved", "orderId", event.OrderID, "productId", item.ProductId)
-        }
-    }
-    
-    // Naive loop
-    // In production: Distributed Transaction / Saga needs strict state management.
+    // Saga Logic:
+    // 1. Try to reserve all items.
+    // 2. If all success -> Publish StockReservedEvent
+    // 3. If any fail -> Rollback successful ones (ReleaseStock) -> Publish StockReservationFailedEvent
+
+    var reservedItems []struct{ProductID uuid.UUID; Quantity int}
+    var reservationErr error
+
     for _, item := range event.Items {
          req := &domain.ReserveStockRequest{
              ProductID: item.ProductId,
@@ -104,13 +112,56 @@ func (c *KafkaConsumer) handleMessage(ctx context.Context, value []byte) error {
              OrderID: event.OrderID,
          }
          err := c.svc.ReserveStock(ctx, req)
-         logReservation(struct{ProductId uuid.UUID; Quantity int}{item.ProductId, item.Quantity}, err)
-         // If one fails, we should ideally Rollback others (Compensating Transaction)
+         if err != nil {
+             reservationErr = err
+             slog.Error("Stock Reservation Failed", "orderId", event.OrderID, "productId", item.ProductId, "error", err)
+             break
+         }
+         reservedItems = append(reservedItems, struct{ProductID uuid.UUID; Quantity int}{item.ProductId, item.Quantity})
     }
 
-	return nil
+    if reservationErr != nil {
+        // Compensating Transaction: Rollback reserved items
+        slog.Info("Rolling back reservations", "orderId", event.OrderID)
+        for _, item := range reservedItems {
+            // Best effort rollback
+            _ = c.svc.ReleaseStock(ctx, item.ProductID, item.Quantity, event.OrderID)
+        }
+        
+        // Publish Failure Event
+        failEvent := StockReservationFailedEvent{
+            OrderID: event.OrderID,
+            Reason:  reservationErr.Error(),
+            Status:  "STOCK_RESERVATION_FAILED",
+        }
+        return c.publishEvent(ctx, "StockReservationFailed", failEvent)
+    }
+
+    // Success
+    successEvent := StockReservedEvent{
+        OrderID: event.OrderID,
+        Status:  "STOCK_RESERVED",
+    }
+    return c.publishEvent(ctx, "StockReserved", successEvent)
 }
 
-func (c *KafkaConsumer) Close() error {
+func (c *EventManager) publishEvent(ctx context.Context, key string, payload interface{}) error {
+    val, err := json.Marshal(payload)
+    if err != nil {
+        return err
+    }
+    
+    // We use a header or structure to differentiate event types if strictly strict, 
+    // or just assume consumer knows schema based on status field.
+    // Here sending basic JSON.
+    
+    return c.writer.WriteMessages(ctx, kafka.Message{
+        Key:   []byte(key), // Use key related to OrderID ideally for partitioning
+        Value: val,
+    })
+}
+
+func (c *EventManager) Close() error {
+    _ = c.writer.Close()
 	return c.reader.Close()
 }
