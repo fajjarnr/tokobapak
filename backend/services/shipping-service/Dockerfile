@@ -14,6 +14,7 @@ RUN go mod download
 COPY . .
 
 # Build binary
+RUN go mod tidy
 RUN CGO_ENABLED=0 GOOS=linux go build -o /shipping-service ./cmd/server
 
 # Production stage
