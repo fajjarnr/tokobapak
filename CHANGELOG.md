@@ -45,6 +45,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - OpenAPI/Swagger documentation
   - Podman Containerfile (multi-stage build)
 
+#### Backend - Order Service
+- **Order Service (Java Spring Boot 3.4)** - Order Management Microservice
+  - Spring Cloud Stream Kafka integration
+  - Event-driven architecture (`order.created` event)
+  - Transactional implementation with PostgreSQL
+  - Domain-Driven Design (DDD) structure
+  - Flyway migrations for order tables
+  - Podman Containerfile (multi-stage build)
+
 #### Backend - Product Service
 - **Product Service (NestJS)** - First backend microservice
   - Full CRUD endpoints with pagination
@@ -73,6 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Renamed `docker-compose.yml` to `podman-compose.yml`
   - Updated all service Dockerfiles to Containerfiles
   - Added health checks for all services
+  - Added **Kafka** and **Zookeeper** for event streaming
   - Updated infrastructure README with Podman commands
 
 
