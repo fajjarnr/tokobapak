@@ -3,43 +3,12 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Star } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useProducts } from '@/hooks/use-products'
 
 const tabs = ['New Arrivals', 'Best Seller', 'Best Offers']
-
-const newArrivalsProducts = [
-    { id: '101', image: 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400', title: 'Canon EOS R5 Mirrorless', subtitle: 'Digital Camera', price: 38990000, originalPrice: 42990000, rating: 5, reviews: 128 },
-    { id: '102', image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400', title: 'Apple Watch Ultra 2', subtitle: 'Smart Watch', price: 7990000, originalPrice: 8990000, rating: 5, reviews: 342 },
-    { id: '103', image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400', title: 'Sony WF-1000XM5', subtitle: 'Wireless Earbuds', price: 2790000, originalPrice: 3290000, rating: 4, reviews: 89 },
-    { id: '104', image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400', title: 'Nike Air Max 2024', subtitle: 'Running Shoes', price: 1890000, originalPrice: 2290000, rating: 4, reviews: 567 },
-    { id: '105', image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400', title: 'Herman Miller Aeron', subtitle: 'Ergonomic Chair', price: 13950000, originalPrice: 16950000, rating: 5, reviews: 234 },
-    { id: '106', image: 'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=400', title: 'Bose QuietComfort Ultra', subtitle: 'Wireless Headphones', price: 3790000, originalPrice: 4290000, rating: 5, reviews: 456 },
-    { id: '107', image: 'https://images.unsplash.com/photo-1434493789847-2f02dc6ca35d?w=400', title: 'Samsung Galaxy Watch 6', subtitle: 'Smart Watch', price: 3290000, originalPrice: 3990000, rating: 4, reviews: 198 },
-    { id: '108', image: 'https://images.unsplash.com/photo-1473968512647-3e447244af8f?w=400', title: 'DJI Mini 4 Pro Drone', subtitle: 'Aerial Camera', price: 7590000, originalPrice: 8990000, rating: 5, reviews: 87 },
-]
-
-const bestSellerProducts = [
-    { id: '201', image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400', title: 'Wilson Ultra Power XL 112', subtitle: 'Gaming Chair', price: 18990000, originalPrice: 19940500, rating: 4, reviews: 2345 },
-    { id: '202', image: 'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=400', title: 'AirPods Max Space Gray', subtitle: 'Premium Headphones', price: 4990000, originalPrice: 5490000, rating: 5, reviews: 4521 },
-    { id: '203', image: 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400', title: 'GoPro Hero 12 Black', subtitle: 'Action Camera', price: 3990000, originalPrice: 4490000, rating: 4, reviews: 1876 },
-    { id: '204', image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400', title: 'Adidas Ultraboost 23', subtitle: 'Running Shoes', price: 1790000, originalPrice: 1990000, rating: 5, reviews: 3456 },
-    { id: '205', image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400', title: 'AirPods Pro 2nd Gen', subtitle: 'Wireless Earbuds', price: 2290000, originalPrice: 2490000, rating: 5, reviews: 5678 },
-    { id: '206', image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400', title: 'Garmin Fenix 7X', subtitle: 'Sport Watch', price: 6990000, originalPrice: 7990000, rating: 5, reviews: 1234 },
-    { id: '207', image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400', title: 'IKEA Markus Office', subtitle: 'Ergonomic Chair', price: 2490000, originalPrice: 2990000, rating: 4, reviews: 2789 },
-    { id: '208', image: 'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=400', title: 'Sony WH-1000XM5', subtitle: 'Noise Canceling', price: 3490000, originalPrice: 3990000, rating: 5, reviews: 4123 },
-]
-
-const bestOffersProducts = [
-    { id: '301', image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400', title: 'New Balance 990v6', subtitle: 'Premium Sneakers', price: 1490000, originalPrice: 2490000, rating: 4, reviews: 567 },
-    { id: '302', image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400', title: 'Jabra Elite 85t', subtitle: 'Wireless Earbuds', price: 1490000, originalPrice: 2290000, rating: 4, reviews: 892 },
-    { id: '303', image: 'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=400', title: 'Beats Studio Pro', subtitle: 'Premium Headphones', price: 2490000, originalPrice: 3490000, rating: 4, reviews: 1234 },
-    { id: '304', image: 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400', title: 'Fujifilm X-T5', subtitle: 'Mirrorless Camera', price: 14990000, originalPrice: 18990000, rating: 5, reviews: 456 },
-    { id: '305', image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400', title: 'Steelcase Leap V2', subtitle: 'Office Chair', price: 7990000, originalPrice: 11990000, rating: 5, reviews: 789 },
-    { id: '306', image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400', title: 'Fitbit Sense 2', subtitle: 'Health Watch', price: 1990000, originalPrice: 2990000, rating: 4, reviews: 1567 },
-    { id: '307', image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400', title: 'Puma RS-X Reinvention', subtitle: 'Retro Sneakers', price: 890000, originalPrice: 1490000, rating: 4, reviews: 345 },
-    { id: '308', image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400', title: 'Samsung Galaxy Buds2', subtitle: 'Wireless Earbuds', price: 990000, originalPrice: 1490000, rating: 4, reviews: 2345 },
-]
 
 const formatPrice = (price: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -49,9 +18,24 @@ const formatPrice = (price: number) => {
     }).format(price)
 }
 
+// Category-based placeholder images
+const placeholderImages: Record<string, string> = {
+    '550e8400-e29b-41d4-a716-446655440001': 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400',
+    '550e8400-e29b-41d4-a716-446655440002': 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400',
+    '550e8400-e29b-41d4-a716-446655440003': 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400',
+}
+
 export function TabbedProductSection() {
     const [activeTab, setActiveTab] = useState('Best Seller')
     const [countdown, setCountdown] = useState({ hours: 20, minutes: 45, seconds: 9 })
+
+    // Fetch products from backend - sort based on tab
+    const { data: productsData, isLoading } = useProducts({
+        pageSize: 8,
+        sort: activeTab === 'New Arrivals' ? '-createdAt' : activeTab === 'Best Seller' ? '-reviewCount' : '-discount',
+    })
+
+    const products = productsData?.data || []
 
     useEffect(() => {
         const timer = setInterval(() => {
@@ -77,20 +61,12 @@ export function TabbedProductSection() {
 
     const formatTime = (num: number) => num.toString().padStart(2, '0')
 
-    const getProducts = () => {
-        switch (activeTab) {
-            case 'New Arrivals':
-                return newArrivalsProducts
-            case 'Best Seller':
-                return bestSellerProducts
-            case 'Best Offers':
-                return bestOffersProducts
-            default:
-                return bestSellerProducts
+    const getProductImage = (product: typeof products[0]) => {
+        if (product.images && product.images.length > 0) {
+            return product.images[0]
         }
+        return placeholderImages[product.categoryId] || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400'
     }
-
-    const products = getProducts()
 
     return (
         <section className="py-12 bg-background">
@@ -148,68 +124,85 @@ export function TabbedProductSection() {
 
                         {/* Promo text */}
                         <div>
-                            <h3 className="text-2xl font-bold mb-1">Sneaker Fest 2024</h3>
-                            <p className="text-sm text-primary-foreground/80 mb-3">Diskon s/d 40% untuk Sneaker Wanita</p>
+                            <h3 className="text-2xl font-bold mb-1">Flash Sale 2024</h3>
+                            <p className="text-sm text-primary-foreground/80 mb-3">Diskon s/d 40% untuk semua produk</p>
                             <Button
                                 variant="link"
                                 className="text-accent hover:text-accent/80 p-0 h-auto font-semibold"
+                                asChild
                             >
-                                Belanja Sekarang
+                                <Link href="/products">Belanja Sekarang</Link>
                             </Button>
                         </div>
                     </div>
 
                     {/* Right Product Grid - 4x2 */}
                     <div className="lg:col-span-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {products.map((product) => (
-                            <Link
-                                key={product.id}
-                                href={`/product/${product.id}`}
-                                className="bg-card p-4 border border-border hover:shadow-lg transition-shadow group"
-                            >
-                                {/* Image */}
-                                <div className="aspect-square bg-muted/10 mb-3 overflow-hidden relative">
-                                    <Image
-                                        src={product.image}
-                                        alt={product.title}
-                                        fill
-                                        className="object-cover group-hover:scale-105 transition-transform duration-300"
-                                    />
+                        {isLoading ? (
+                            Array.from({ length: 8 }).map((_, i) => (
+                                <div key={i} className="bg-card p-4 border border-border">
+                                    <Skeleton className="aspect-square mb-3" />
+                                    <Skeleton className="h-4 w-3/4 mb-2" />
+                                    <Skeleton className="h-4 w-1/2" />
                                 </div>
-
-                                {/* Info */}
-                                <h4 className="text-sm font-medium text-foreground line-clamp-1">
-                                    {product.title}
-                                </h4>
-                                <p className="text-xs text-muted-foreground mb-2">{product.subtitle}</p>
-
-                                {/* Price */}
-                                <div className="flex items-center gap-2 mb-2">
-                                    <span className="text-sm font-bold text-foreground">
-                                        {formatPrice(product.price)}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground line-through">
-                                        {formatPrice(product.originalPrice)}
-                                    </span>
-                                </div>
-
-                                {/* Rating */}
-                                <div className="flex items-center gap-1">
-                                    <div className="flex">
-                                        {[...Array(5)].map((_, i) => (
-                                            <Star
-                                                key={i}
-                                                className={`w-3 h-3 ${i < product.rating
-                                                        ? 'fill-yellow-400 text-yellow-400'
-                                                        : 'text-muted'
-                                                    }`}
-                                            />
-                                        ))}
+                            ))
+                        ) : products.length > 0 ? (
+                            products.map((product) => (
+                                <Link
+                                    key={product.id}
+                                    href={`/product/${product.id}`}
+                                    className="bg-card p-4 border border-border hover:shadow-lg transition-shadow group"
+                                >
+                                    {/* Image */}
+                                    <div className="aspect-square bg-muted/10 mb-3 overflow-hidden relative">
+                                        <Image
+                                            src={getProductImage(product)}
+                                            alt={product.name}
+                                            fill
+                                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                        />
                                     </div>
-                                    <span className="text-xs text-muted-foreground">({product.reviews})</span>
-                                </div>
-                            </Link>
-                        ))}
+
+                                    {/* Info */}
+                                    <h4 className="text-sm font-medium text-foreground line-clamp-1">
+                                        {product.name}
+                                    </h4>
+                                    <p className="text-xs text-muted-foreground mb-2">{product.description?.slice(0, 30)}...</p>
+
+                                    {/* Price */}
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-sm font-bold text-foreground">
+                                            {formatPrice(Number(product.price))}
+                                        </span>
+                                        {product.originalPrice && (
+                                            <span className="text-xs text-muted-foreground line-through">
+                                                {formatPrice(Number(product.originalPrice))}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* Rating */}
+                                    <div className="flex items-center gap-1">
+                                        <div className="flex">
+                                            {[...Array(5)].map((_, i) => (
+                                                <Star
+                                                    key={i}
+                                                    className={`w-3 h-3 ${i < Number(product.rating)
+                                                            ? 'fill-yellow-400 text-yellow-400'
+                                                            : 'text-muted'
+                                                        }`}
+                                                />
+                                            ))}
+                                        </div>
+                                        <span className="text-xs text-muted-foreground">({product.reviewCount})</span>
+                                    </div>
+                                </Link>
+                            ))
+                        ) : (
+                            <div className="col-span-full text-center py-8 text-muted-foreground">
+                                Tidak ada produk ditemukan
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

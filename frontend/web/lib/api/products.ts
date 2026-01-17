@@ -90,7 +90,8 @@ export const productApi = {
 // Category API
 export const categoryApi = {
   getCategories: async (): Promise<Category[]> => {
-    return apiClient.get<Category[]>(API_ENDPOINTS.categories.list, { auth: false });
+    const response = await apiClient.get<{ data: Category[] }>(API_ENDPOINTS.categories.list, { auth: false });
+    return response.data || [];
   },
 
   getCategory: async (id: string): Promise<Category> => {
