@@ -87,7 +87,15 @@ export function BestSellersSection() {
                             )}
                         </div>
 
-                        <ProductCard product={product} />
+                        <ProductCard
+                            id={product.id}
+                            name={product.name}
+                            slug={product.id}
+                            price={product.price}
+                            originalPrice={product.originalPrice}
+                            image={product.image}
+                            rating={product.rating}
+                        />
 
                         {/* Sold Count Badge */}
                         <Badge

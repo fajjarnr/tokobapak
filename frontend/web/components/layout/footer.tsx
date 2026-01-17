@@ -1,70 +1,96 @@
-
 import Link from 'next/link'
-import { Facebook, Instagram, Twitter } from 'lucide-react'
+import { Facebook, Instagram, Twitter, Youtube, CreditCard, Wallet } from 'lucide-react'
+
+const footerLinks = {
+    'Tentang Kami': ['Tentang TokoBapak', 'Karir', 'Press', 'Program Afiliasi'],
+    'Layanan Pelanggan': ['Hubungi Kami', 'FAQ', 'Info Pengiriman', 'Pengembalian'],
+    'Link Cepat': ['New Arrivals', 'Best Sellers', 'Sale Items', 'Gift Cards'],
+    'Akun Saya': ['Pesanan Saya', 'Wishlist', 'Pengaturan Akun', 'Lacak Pesanan'],
+}
 
 export function Footer() {
     return (
-        <footer className="w-full border-t bg-background py-12 md:py-16 lg:py-20">
-            <div className="container px-4 md:px-6">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-2">
-                            <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
+        <footer className="bg-foreground text-card pt-12 pb-6">
+            <div className="container mx-auto px-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-8">
+                    {/* Brand column */}
+                    <div className="col-span-2 md:col-span-4 lg:col-span-1">
+                        <Link href="/" className="flex items-center gap-2 mb-4">
+                            <div className="w-10 h-10 bg-primary flex items-center justify-center">
                                 <span className="text-primary-foreground font-bold text-xl">T</span>
                             </div>
-                            <span className="text-xl font-bold">TokoBapak</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                            Platform e-commerce terpercaya untuk kebutuhan keluarga Anda. Belanja aman, hemat, dan cepat.
+                            <span className="text-2xl font-bold text-card">TokoBapak</span>
+                        </Link>
+                        <p className="text-card/70 text-sm mb-4">
+                            Toko online terpercaya untuk semua kebutuhan Anda. Produk berkualitas, harga terbaik, dan layanan prima.
                         </p>
-                        <div className="flex gap-4">
-                            <Link href="#" className="text-muted-foreground hover:text-foreground">
-                                <Facebook className="h-5 w-5" />
-                                <span className="sr-only">Facebook</span>
-                            </Link>
-                            <Link href="#" className="text-muted-foreground hover:text-foreground">
-                                <Instagram className="h-5 w-5" />
-                                <span className="sr-only">Instagram</span>
-                            </Link>
-                            <Link href="#" className="text-muted-foreground hover:text-foreground">
-                                <Twitter className="h-5 w-5" />
-                                <span className="sr-only">Twitter</span>
-                            </Link>
+                        <div className="flex gap-3">
+                            <a
+                                href="#"
+                                className="w-9 h-9 bg-card/10 flex items-center justify-center hover:bg-primary transition-colors"
+                            >
+                                <Facebook className="h-4 w-4" />
+                            </a>
+                            <a
+                                href="#"
+                                className="w-9 h-9 bg-card/10 flex items-center justify-center hover:bg-primary transition-colors"
+                            >
+                                <Twitter className="h-4 w-4" />
+                            </a>
+                            <a
+                                href="#"
+                                className="w-9 h-9 bg-card/10 flex items-center justify-center hover:bg-primary transition-colors"
+                            >
+                                <Instagram className="h-4 w-4" />
+                            </a>
+                            <a
+                                href="#"
+                                className="w-9 h-9 bg-card/10 flex items-center justify-center hover:bg-primary transition-colors"
+                            >
+                                <Youtube className="h-4 w-4" />
+                            </a>
                         </div>
                     </div>
 
-                    <div className="space-y-4">
-                        <h3 className="font-semibold text-lg">Belanja</h3>
-                        <ul className="space-y-2 text-sm text-muted-foreground">
-                            <li><Link href="#" className="hover:text-foreground">Semua Produk</Link></li>
-                            <li><Link href="#" className="hover:text-foreground">Flash Sale</Link></li>
-                            <li><Link href="#" className="hover:text-foreground">Produk Terlaris</Link></li>
-                            <li><Link href="#" className="hover:text-foreground">Kategori</Link></li>
-                        </ul>
-                    </div>
-
-                    <div className="space-y-4">
-                        <h3 className="font-semibold text-lg">Bantuan</h3>
-                        <ul className="space-y-2 text-sm text-muted-foreground">
-                            <li><Link href="#" className="hover:text-foreground">Cara Belanja</Link></li>
-                            <li><Link href="#" className="hover:text-foreground">Status Pesanan</Link></li>
-                            <li><Link href="#" className="hover:text-foreground">Hubungi Kami</Link></li>
-                            <li><Link href="#" className="hover:text-foreground">Pengembalian</Link></li>
-                        </ul>
-                    </div>
-
-                    <div className="space-y-4">
-                        <h3 className="font-semibold text-lg">Tentang Kami</h3>
-                        <ul className="space-y-2 text-sm text-muted-foreground">
-                            <li><Link href="#" className="hover:text-foreground">Tentang TokoBapak</Link></li>
-                            <li><Link href="#" className="hover:text-foreground">Karir</Link></li>
-                            <li><Link href="#" className="hover:text-foreground">Kebijakan Privasi</Link></li>
-                            <li><Link href="#" className="hover:text-foreground">Syarat & Ketentuan</Link></li>
-                        </ul>
-                    </div>
+                    {/* Link columns */}
+                    {Object.entries(footerLinks).map(([title, links]) => (
+                        <div key={title}>
+                            <h4 className="font-semibold text-card mb-4">{title}</h4>
+                            <ul className="space-y-2">
+                                {links.map((link) => (
+                                    <li key={link}>
+                                        <a
+                                            href="#"
+                                            className="text-sm text-card/70 hover:text-primary transition-colors"
+                                        >
+                                            {link}
+                                        </a>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    ))}
                 </div>
-                <div className="mt-12 pt-8 border-t text-center text-sm text-muted-foreground">
-                    <p>&copy; {new Date().getFullYear()} TokoBapak. All rights reserved.</p>
+
+                {/* Payment methods & copyright */}
+                <div className="border-t border-card/10 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <p className="text-sm text-card/60">
+                        © {new Date().getFullYear()} TokoBapak. All rights reserved.
+                    </p>
+                    <div className="flex items-center gap-3">
+                        <span className="text-sm text-card/60">We Accept:</span>
+                        <div className="flex gap-2">
+                            <div className="w-10 h-6 bg-card/10 flex items-center justify-center">
+                                <CreditCard className="h-4 w-4 text-card/70" />
+                            </div>
+                            <div className="w-10 h-6 bg-card/10 flex items-center justify-center">
+                                <Wallet className="h-4 w-4 text-card/70" />
+                            </div>
+                            <div className="w-10 h-6 bg-card/10 flex items-center justify-center text-xs font-bold text-card/70">
+                                Pay
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </footer>

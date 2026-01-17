@@ -1,35 +1,79 @@
-
 'use client'
 
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ShoppingCart, Heart } from 'lucide-react'
+import { ShoppingCart, Heart, Star } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useCartStore } from '@/stores/cart-store'
 import { toast } from 'sonner'
 import { Product } from '@/lib/api'
+import { useState } from 'react'
 
 interface ProductCardProps {
-    product: Product
+    product?: Product
+    // Alternative props for standalone usage
+    id?: string
+    name?: string
+    slug?: string
+    price?: number
+    originalPrice?: number
+    image?: string
+    rating?: number
+    reviewCount?: number
+    isNew?: boolean
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({
+    product,
+    id,
+    name,
+    slug,
+    price,
+    originalPrice,
+    image,
+    rating,
+    reviewCount,
+    isNew
+}: ProductCardProps) {
     const addItem = useCartStore((state) => state.addItem)
+    const [isWishlisted, setIsWishlisted] = useState(false)
+
+    // Use product props or standalone props
+    const productId = product?.id ?? id ?? ''
+    const productName = product?.name ?? name ?? ''
+    const productSlug = product?.slug ?? slug ?? productId
+    const productPrice = product?.price ?? price ?? 0
+    const productOriginalPrice = product?.originalPrice ?? originalPrice
+    const productImage = product?.images?.[0] ?? image ?? '/placeholder.svg'
+    const productRating = product?.rating ?? rating ?? 0
+    const productReviewCount = product?.reviewCount ?? reviewCount ?? 0
+    const productIsNew = isNew ?? (product?.createdAt ? new Date(product.createdAt).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000 : false)
+
+    const discount = productOriginalPrice
+        ? Math.round(((productOriginalPrice - productPrice) / productOriginalPrice) * 100)
+        : 0
 
     const handleAddToCart = (e: React.MouseEvent) => {
         e.preventDefault()
+        e.stopPropagation()
         addItem({
-            id: product.id,
-            productId: product.id,
-            name: product.name,
-            price: product.price,
+            id: productId,
+            productId: productId,
+            name: productName,
+            price: productPrice,
             quantity: 1,
-            image: product.images[0] || '/placeholder.png', // Handle image array
-            sellerId: product.sellerId,
+            image: productImage,
+            sellerId: product?.sellerId,
         })
-        toast.success('Product added to cart')
+        toast.success(`${productName} ditambahkan ke keranjang`)
+    }
+
+    const handleWishlistToggle = (e: React.MouseEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        setIsWishlisted(!isWishlisted)
+        toast.success(isWishlisted ? 'Dihapus dari wishlist' : 'Ditambahkan ke wishlist')
     }
 
     const formatPrice = (price: number) => {
@@ -40,54 +84,89 @@ export function ProductCard({ product }: ProductCardProps) {
         }).format(price)
     }
 
-    // New products check (e.g. created within last 7 days)
-    const isNew = new Date(product.createdAt).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000;
-
     return (
-        <Card className="group overflow-hidden border-none shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="p-0 relative aspect-square overflow-hidden bg-muted">
-                <Link href={`/product/${product.id}`}>
-                    <Image
-                        src={product.images[0] || '/placeholder-product.png'}
-                        alt={product.name}
-                        fill
-                        className="object-cover transition-transform group-hover:scale-105"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    />
-                </Link>
-                {isNew && (
-                    <Badge className="absolute top-2 left-2" variant="secondary">New</Badge>
-                )}
-                {product.discount && product.discount > 0 && (
-                    <Badge className="absolute top-2 right-2 bg-red-500 hover:bg-red-600">-{product.discount}%</Badge>
-                )}
-            </CardHeader>
-            <CardContent className="p-4 grid gap-1">
-                <Link href={`/product/${product.id}`} className="hover:underline">
-                    <h3 className="font-semibold truncate">{product.name}</h3>
-                </Link>
+        <Link
+            href={`/product/${productSlug}`}
+            className="group bg-card border border-border overflow-hidden hover:shadow-lg transition-all duration-300 block"
+        >
+            {/* Image container */}
+            <div className="relative aspect-square overflow-hidden bg-muted/30">
+                <Image
+                    src={productImage}
+                    alt={productName}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                />
+
+                {/* Badges */}
+                <div className="absolute top-3 left-3 flex flex-col gap-2">
+                    {discount > 0 && (
+                        <Badge className="bg-destructive text-destructive-foreground">
+                            -{discount}%
+                        </Badge>
+                    )}
+                    {productIsNew && (
+                        <Badge className="bg-primary text-primary-foreground">New</Badge>
+                    )}
+                </div>
+
+                {/* Wishlist button */}
+                <Button
+                    size="icon"
+                    variant="secondary"
+                    className={`absolute top-3 right-3 transition-all ${isWishlisted
+                            ? 'opacity-100 bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                            : 'opacity-0 group-hover:opacity-100'
+                        }`}
+                    onClick={handleWishlistToggle}
+                >
+                    <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-current' : ''}`} />
+                </Button>
+
+                {/* Quick add */}
+                <div className="absolute bottom-3 left-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button className="w-full gap-2" onClick={handleAddToCart}>
+                        <ShoppingCart className="h-4 w-4" />
+                        Add to Cart
+                    </Button>
+                </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-4">
+                <h3 className="font-medium text-foreground line-clamp-2 mb-2 group-hover:text-primary transition-colors">
+                    {productName}
+                </h3>
+
+                {/* Rating */}
+                <div className="flex items-center gap-1 mb-2">
+                    <div className="flex items-center">
+                        {[...Array(5)].map((_, i) => (
+                            <Star
+                                key={i}
+                                className={`h-3.5 w-3.5 ${i < productRating
+                                        ? 'fill-amber-400 text-amber-400'
+                                        : 'fill-muted text-muted'
+                                    }`}
+                            />
+                        ))}
+                    </div>
+                    <span className="text-xs text-muted-foreground">({productReviewCount})</span>
+                </div>
+
+                {/* Price */}
                 <div className="flex items-center gap-2">
-                    <span className="font-bold text-lg">{formatPrice(product.price)}</span>
-                    {product.originalPrice && product.originalPrice > product.price && (
+                    <span className="text-lg font-bold text-foreground">
+                        {formatPrice(productPrice)}
+                    </span>
+                    {productOriginalPrice && productOriginalPrice > productPrice && (
                         <span className="text-sm text-muted-foreground line-through">
-                            {formatPrice(product.originalPrice)}
+                            {formatPrice(productOriginalPrice)}
                         </span>
                     )}
                 </div>
-                <div className="flex items-center gap-1 text-sm text-yellow-500">
-                    {'★'.repeat(Math.round(product.rating))}
-                    <span className="text-muted-foreground ml-1">({product.rating.toFixed(1)})</span>
-                    <span className="text-muted-foreground text-xs ml-1">({product.reviewCount})</span>
-                </div>
-            </CardContent>
-            <CardFooter className="p-4 pt-0 gap-2">
-                <Button className="w-full gap-2" size="sm" onClick={handleAddToCart}>
-                    <ShoppingCart className="h-4 w-4" /> Add
-                </Button>
-                <Button variant="outline" size="icon" className="shrink-0 aspect-square h-9 w-9">
-                    <Heart className="h-4 w-4" />
-                </Button>
-            </CardFooter>
-        </Card>
+            </div>
+        </Link>
     )
 }

@@ -1,45 +1,39 @@
-
-import { HeroCarousel } from '@/components/home/hero-carousel'
-import { FeaturedProductsSection } from '@/components/home/featured-products-section'
-import { TrendingProductsSection } from '@/components/home/trending-products-section'
+import { HeroSection } from '@/components/home/hero-section'
+import { DealsSection } from '@/components/home/deals-section'
+import { TabbedProductSection } from '@/components/home/tabbed-product-section'
 import { CategoriesGrid } from '@/components/home/categories-grid'
-import { PromoBanner } from '@/components/home/promo-banner'
-import { FlashSaleSection } from '@/components/home/flash-sale-section' // Keep existing if it has logic
-import { TrustBadgesSection } from '@/components/home/trust-badges-section'
-import { NewsletterSection } from '@/components/home/newsletter-section'
+import { TrustBadges } from '@/components/home/trust-badges'
+import { Newsletter } from '@/components/home/newsletter'
 
 export default function HomePage() {
   return (
-    <div className="flex flex-col gap-0 pb-10">
-      
-      {/* Hero Section */}
-      <HeroCarousel />
+    <div className="min-h-screen flex flex-col">
+      <main className="flex-1">
+        {/* Hero Section - Grid Layout */}
+        <HeroSection />
 
-      {/* Trust Badges */}
-      <TrustBadgesSection />
+        {/* Weekly Best Deals - Dark Background */}
+        <DealsSection />
 
-      <div className="container mx-auto px-4 space-y-12 mt-12">
+        {/* Tabbed Products with Countdown */}
+        <TabbedProductSection />
 
-        {/* Dynamic Categories */}
-        <CategoriesGrid />
+        {/* Categories Section */}
+        <section className="py-12 bg-background">
+          <div className="container mx-auto px-4">
+            <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">
+              Jelajahi Kategori
+            </h2>
+            <CategoriesGrid />
+          </div>
+        </section>
 
-        {/* Flash Sale (Mock/Static for now, or update later) */}
-        <FlashSaleSection />
-
-        {/* Trending Products (Dynamic) */}
-        <TrendingProductsSection />
-
-        {/* Featured Products (Dynamic) */}
-        <FeaturedProductsSection />
-
-        {/* Promo Banner */}
-        <PromoBanner />
+        {/* Trust Badges */}
+        <TrustBadges />
 
         {/* Newsletter */}
-        <NewsletterSection />
-
-      </div>
+        <Newsletter />
+      </main>
     </div>
   )
 }
-

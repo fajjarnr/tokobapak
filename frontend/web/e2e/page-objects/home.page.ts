@@ -33,7 +33,7 @@ export class HomePage {
 
         // Navigation
         this.header = page.locator('header');
-        this.logo = page.locator('a[href="/"]').filter({ hasText: /tokobapak/i }).or(page.locator('header a[href="/"]').first());
+        this.logo = page.locator('header a[href="/"]').first();
         this.searchInput = page.locator('input[placeholder*="Search"]').or(page.locator('input[type="search"]'));
         this.cartButton = page.locator('[data-testid="cart-button"]').or(page.locator('a[href="/cart"]'));
         this.userMenu = page.locator('[data-testid="user-menu"]').or(page.locator('button:has-text("Account")'));
