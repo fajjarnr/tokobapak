@@ -128,6 +128,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Verification system
   - Stats tracking
 
+#### Backend - Analytics Service
+- **Analytics Service (Python FastAPI)** - Business Analytics
+  - Event tracking (views, cart, purchases)
+  - Sales metrics dashboard
+  - Product analytics
+  - Conversion tracking
+
+#### Backend - Promotion Service
+- **Promotion Service (Java Spring Boot 3.4)** - Vouchers & Promotions
+  - Promotion campaigns management
+  - Voucher code generation
+  - Multiple discount types (percentage, fixed, shipping)
+  - Usage limits and validation
+  - Flyway migrations
+
 #### Backend - Product Service
 - **Product Service (NestJS)** - First backend microservice
   - Full CRUD endpoints with pagination

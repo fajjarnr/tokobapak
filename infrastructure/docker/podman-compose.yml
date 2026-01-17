@@ -566,6 +566,62 @@ services:
       retries: 3
       start_period: 30s
 
+  # Analytics Service (Python FastAPI)
+  analytics-service:
+    build:
+      context: ../../backend/services/analytics-service
+      dockerfile: Dockerfile
+    container_name: tokobapak_analytics_service
+    restart: always
+    ports:
+      - "3017:3017"
+    environment:
+      - PORT=3017
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import httpx; httpx.get('http://localhost:3017/health')",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Promotion Service (Java Spring Boot)
+  promotion-service:
+    build:
+      context: ../../backend/services/promotion-service
+      dockerfile: Dockerfile
+    container_name: tokobapak_promotion_service
+    restart: always
+    ports:
+      - "3018:3018"
+    environment:
+      - PORT=3018
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/tokobapak_promotions
+      - DATABASE_USERNAME=postgres
+      - DATABASE_PASSWORD=postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3018/actuator/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
 volumes:
   postgres_data:
   redis_data:
