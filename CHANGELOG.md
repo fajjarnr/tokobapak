@@ -78,6 +78,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Redis-backed job queues with retry logic
   - Docker production deployment ready
 
+#### Backend - Review Service
+- **Review Service (Go 1.22)** - Product Reviews & Ratings
+  - Clean Architecture with Chi Router
+  - Rating statistics per product (average, distribution)
+  - Helpful votes system
+  - Verified purchase flag
+  - PostgreSQL with pgx driver
+
 #### Backend - Product Service
 - **Product Service (NestJS)** - First backend microservice
   - Full CRUD endpoints with pagination

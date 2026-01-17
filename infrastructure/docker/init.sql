@@ -7,6 +7,7 @@ CREATE DATABASE tokobapak_users;
 CREATE DATABASE tokobapak_orders;
 CREATE DATABASE tokobapak_payments;
 CREATE DATABASE tokobapak_shipping;
+CREATE DATABASE tokobapak_reviews;
 
 -- Grant permissions (if using different users per service in production)
 -- GRANT ALL PRIVILEGES ON DATABASE tokobapak_users TO user_service;
