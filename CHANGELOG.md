@@ -62,6 +62,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Flyway migrations for payment tables
   - Podman Containerfile (multi-stage build)
 
+#### Backend - Shipping Service
+- **Shipping Service (Go 1.22)** - Shipping & Courier Management
+  - Clean Architecture with Chi Router
+  - Kafka event publishing (`shipment.events`)
+  - Shipment status workflow (PENDING → DELIVERED)
+  - PostgreSQL with pgx driver
+  - Docker production deployment ready
+
 #### Backend - Product Service
 - **Product Service (NestJS)** - First backend microservice
   - Full CRUD endpoints with pagination
