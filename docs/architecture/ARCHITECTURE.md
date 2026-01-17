@@ -8,7 +8,9 @@ TokoBapak is a multi-vendor e-commerce marketplace designed with a microservices
 
 ## High-Level Architecture
 
-```
+## High-Level Architecture
+
+![System Architecture](system_architecture.png)
                                     ┌─────────────────────┐
                                     │   Load Balancer     │
                                     │    (Nginx/ALB)      │
