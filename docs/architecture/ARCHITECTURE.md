@@ -10,11 +10,103 @@ TokoBapak is a multi-vendor e-commerce marketplace designed with a microservices
 
 ## High-Level Architecture
 
-![System Architecture](system_architecture.png)
+![System Architecture](../images/system_architecture.png)
+
+```
                                     ┌─────────────────────┐
                                     │   Load Balancer     │
                                     │    (Nginx/ALB)      │
                                     └──────────┬──────────┘
+```
+
+---
+
+## Microservices Architecture
+
+### Design Principles
+
+1. **Single Responsibility**: Each service handles one business domain
+2. **Loose Coupling**: Services communicate via APIs, no direct DB access
+3. **Independent Deployment**: Each service can be deployed independently
+4. **Technology Agnostic**: Use the best technology for each service
+5. **Resilience**: Services handle failures gracefully
+
+### Service Communication
+
+![Checkout Saga Orchestration](../images/saga_pattern_flow.png)
+
+```
+┌─────────────┐      HTTP/REST       ┌─────────────┐
+│   Service A │ ◄──────────────────► │   Service B │
+└─────────────┘                      └─────────────┘
+
+┌─────────────┐      Event Bus       ┌─────────────┐
+│   Service A │ ────────────────────► │   Service B │
+└─────────────┘      (Kafka)         └─────────────┘
+```
+
+**Synchronous**: REST/HTTP for real-time requests (e.g. Frontend -> API Gateway)
+**Asynchronous**: Kafka for distributed transactions (Saga Pattern) like Checkout Flow.
+
+---
+
+## Service Architecture Patterns
+
+### NestJS Services (Product, Cart)
+
+```
+src/
+├── main.ts                    # Application bootstrap
+├── app.module.ts              # Root module
+├── config/                    # Configuration
+```
+
+### Go Service (Catalog, Inventory) - Clean Architecture
+
+```
+cmd/
+└── server/
+    └── main.go               # Application entry point
+
+internal/
+├── domain/                   # Business entities & interfaces
+├── usecase/                  # Business logic
+├── repository/               # Data access layer
+└── delivery/                 # Transport layer
+```
+
+---
+
+## Data Architecture
+
+### Database Strategy
+
+| Service | Database | Type | Purpose |
+|---------|----------|------|---------|
+| Product | PostgreSQL | RDBMS | Products, variants, media |
+| Catalog | PostgreSQL | RDBMS | Categories, brands |
+| Cart | Redis | Key-Value | Session-based cart data |
+| User | PostgreSQL | RDBMS | User accounts |
+| Order | PostgreSQL | RDBMS | Orders, transactions |
+| Inventory | PostgreSQL | RDBMS | Stock management |
+| Search | Elasticsearch | Search | Full-text search |
+
+### Database Per Service Pattern
+
+Each service owns its own database schema to ensure loose coupling.
+
+---
+
+## Entity Relationship Diagrams
+
+### Core Services ERD
+
+![Core Services ERD](../images/core_services_erd.png)
+
+### Text-Based ERD Reference
+
+#### Product Service
+
                                                │
                      ┌─────────────────────────┼─────────────────────────┐
                      │                         │                         │
