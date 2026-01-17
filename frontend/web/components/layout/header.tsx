@@ -55,16 +55,27 @@ export function Header() {
 
                     {/* Search bar */}
                     <div className="flex-1 max-w-2xl hidden md:flex">
-                        <div className="relative w-full flex">
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault()
+                                const form = e.target as HTMLFormElement
+                                const input = form.elements.namedItem('q') as HTMLInputElement
+                                if (input.value.trim()) {
+                                    window.location.href = `/products?q=${encodeURIComponent(input.value)}`
+                                }
+                            }}
+                            className="relative w-full flex"
+                        >
                             <Input
+                                name="q"
                                 type="text"
                                 placeholder="Cari produk, merek, dan lainnya..."
                                 className="rounded-r-none border-r-0 bg-background"
                             />
-                            <Button className="rounded-l-none px-6">
+                            <Button type="submit" className="rounded-l-none px-6">
                                 <Search className="h-5 w-5" />
                             </Button>
-                        </div>
+                        </form>
                     </div>
 
                     {/* Actions */}

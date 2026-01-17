@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-interface StoredMessage {
+export interface StoredMessage {
   id: string;
   roomId: string;
   senderId: string;
@@ -41,12 +41,12 @@ export class ChatService {
   storeMessage(message: StoredMessage): void {
     const roomMessages = this.messages.get(message.roomId) || [];
     roomMessages.push(message);
-    
+
     // Keep only last 1000 messages per room
     if (roomMessages.length > 1000) {
       roomMessages.shift();
     }
-    
+
     this.messages.set(message.roomId, roomMessages);
   }
 

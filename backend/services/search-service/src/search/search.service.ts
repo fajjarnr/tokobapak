@@ -9,7 +9,7 @@ export class SearchService implements OnModuleInit {
 
   constructor(
     @Inject('ELASTICSEARCH_CLIENT') private readonly esClient: Client,
-  ) {}
+  ) { }
 
   async onModuleInit() {
     await this.createIndexIfNotExists();
@@ -79,7 +79,7 @@ export class SearchService implements OnModuleInit {
           filter,
         },
       },
-      sort: [{ _score: 'desc' }, { createdAt: 'desc' }],
+      sort: [{ _score: 'desc' }, { createdAt: 'desc' }] as any,
       from: (page - 1) * pageSize,
       size: pageSize,
       _source: ['name', 'description', 'category', 'brand', 'price', 'tags'],
@@ -91,8 +91,8 @@ export class SearchService implements OnModuleInit {
       ...hit._source as object,
     }));
 
-    const total = typeof response.hits.total === 'number' 
-      ? response.hits.total 
+    const total = typeof response.hits.total === 'number'
+      ? response.hits.total
       : response.hits.total?.value || 0;
 
     return {
