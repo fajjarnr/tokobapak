@@ -19,11 +19,12 @@ export function useProducts(params?: SearchParams) {
   });
 }
 
-export function useProduct(id: string) {
+export function useProduct(id: string, initialData?: Product) {
   return useQuery<Product>({
     queryKey: ['product', id],
     queryFn: () => productApi.getProduct(id),
     enabled: !!id,
+    initialData,
   });
 }
 

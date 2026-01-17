@@ -1,25 +1,46 @@
-
 'use client'
 
+import React, { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Minus, Plus, Trash2, ArrowRight, ShieldCheck } from 'lucide-react'
+import { Minus, Plus, Trash2, ArrowRight, ShieldCheck, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { useCartStore } from '@/stores/cart-store'
-import { Input } from '@/components/ui/input'
-import { toast } from 'sonner'
+import { useHybridCart } from '@/hooks/use-hybrid-cart'
+
+import { formatPrice } from '@/lib/utils'
 
 export default function CartPage() {
-    const { items, removeItem, updateQuantity, totalPrice } = useCartStore()
+    const { 
+        items, 
+        totalPrice, 
+        updateQuantity, 
+        removeItem, 
+        isAuthenticated, 
+        isLoading, 
+        isUpdating 
+    } = useHybridCart()
 
-    const formatPrice = (price: number) => {
-        return new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-            minimumFractionDigits: 0,
-        }).format(price)
+    // Voucher Logic
+    const [voucherCode, setVoucherCode] = useState('')
+    const [discount, setDiscount] = useState(0)
+
+    const handleApplyVoucher = () => {
+        if (!voucherCode) return;
+        if (!isAuthenticated) {
+            toast.error("Please login to use vouchers")
+            return
+        }
+        toast.info("Voucher application logic to be connected with Order Service")
+    }
+
+    if (isLoading) {
+        return (
+            <div className="container mx-auto px-4 py-32 flex justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        )
     }
 
     if (items.length === 0) {
@@ -48,7 +69,7 @@ export default function CartPage() {
                         <Card key={item.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4">
                             <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border">
                                 <Image
-                                    src={item.image}
+                                    src={item.image || '/placeholder-image.jpg'}
                                     alt={item.name}
                                     fill
                                     className="object-cover"
@@ -60,7 +81,7 @@ export default function CartPage() {
                                         {item.name}
                                     </Link>
                                 </h3>
-                                <p className="text-sm text-muted-foreground">Variant: Default</p>
+                                <p className="text-sm text-muted-foreground">Variant: {item.variant || 'Default'}</p>
                                 <p className="font-bold text-primary sm:hidden">{formatPrice(item.price)}</p>
                             </div>
 
@@ -72,7 +93,8 @@ export default function CartPage() {
                                         variant="ghost"
                                         size="icon"
                                         className="h-8 w-8"
-                                        onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
+                                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                        disabled={isUpdating}
                                     >
                                         <Minus className="h-3 w-3" />
                                     </Button>
@@ -82,6 +104,7 @@ export default function CartPage() {
                                         size="icon"
                                         className="h-8 w-8"
                                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                        disabled={isUpdating}
                                     >
                                         <Plus className="h-3 w-3" />
                                     </Button>
@@ -91,10 +114,8 @@ export default function CartPage() {
                                     variant="ghost"
                                     size="icon"
                                     className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                    onClick={() => {
-                                        removeItem(item.id)
-                                        toast('Item removed from cart')
-                                    }}
+                                    onClick={() => removeItem(item.id)}
+                                    disabled={isUpdating}
                                 >
                                     <Trash2 className="h-4 w-4" />
                                 </Button>
@@ -112,28 +133,34 @@ export default function CartPage() {
                         <CardContent className="space-y-4">
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Subtotal</span>
-                                <span className="font-medium">{formatPrice(totalPrice())}</span>
+                                <span className="font-medium">{formatPrice(totalPrice)}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Shipping Estimate</span>
                                 <span className="text-green-600">Calculated at checkout</span>
                             </div>
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Tax</span>
-                                <span className="font-medium">Rp -</span>
-                            </div>
+                            {discount > 0 && (
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Discount</span>
+                                    <span className="text-green-600">-{formatPrice(discount)}</span>
+                                </div>
+                            )}
                             <Separator />
 
-                            {/* Coupon Code - Mock */}
+                            {/* Coupon Code */}
                             <div className="flex gap-2">
-                                <Input placeholder="Coupon code" />
-                                <Button variant="outline">Apply</Button>
+                                <Input 
+                                    placeholder="Coupon code" 
+                                    value={voucherCode}
+                                    onChange={(e) => setVoucherCode(e.target.value)}
+                                />
+                                <Button variant="outline" onClick={handleApplyVoucher}>Apply</Button>
                             </div>
 
                             <Separator />
                             <div className="flex justify-between items-center">
                                 <span className="font-bold text-lg">Total</span>
-                                <span className="font-bold text-lg text-primary">{formatPrice(totalPrice())}</span>
+                                <span className="font-bold text-lg text-primary">{formatPrice(totalPrice - discount)}</span>
                             </div>
                         </CardContent>
                         <CardFooter>
@@ -153,4 +180,3 @@ export default function CartPage() {
         </div>
     )
 }
-

@@ -21,16 +21,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Frontend - Shop Flow
 - **Product Listing Enhancements**
-  - Advanced Filtering (Price range, Categories, Brands via checkbox/slider)
-  - Sorting options (Price, Rating, Newest)
-  - Pagination system
-- **Product Detail Features**
-  - Recommendations component
-  - Improved tabs for Description and Reviews
-- **Checkout Process**
-  - Refined Checkout page UI
-  - Animated Order Success page with tracking ID
-- **Developer Experience**
+  - Dynamic filtering with API integration (Price, Search)
+  - Servers-side pagination handling
+  - Responsive grid layout with Skeleton loading states
+- **Home Page**
+  - Dynamic "Trending Products" and "Featured Products" sections
+  - Hero Carousel and Promotional Banners
+  - Category navigation grid
+- **Product Components**
+  - `ProductCard` refactored to use shared API types
+  - `Skeleton` components for loading states
+
+- **Product Detail Page**
+  - Dynamic data fetching with `useProduct` hook
+  - Variant selection (Color, Size) logic
+  - Dynamic "Similar Products" recommendation section
+  - SEO-friendly URL structure
+
+- **Cart & Checkout**
+  - Hybrid Cart system: Server-side (Authenticated) + Client-side (Guest)
+  - `useCart` hook integration for real-time cart management
+  - Promo code/Voucher UI integration
+  - Quantity management and item removal with optimistic updates
+
+- **Flash Sale Section**
+  - Integrated with `useTrendingProducts` for dynamic content
+  - Real-time countdown timer integration
+
   - Fixed ESLint configuration for Next.js 15 compatibility
 
 #### Backend - User Service
@@ -171,6 +188,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `ioredis` for high-performance operations
   - Add/Update/Remove item with quantity logic
   - Independent microservice structure
+
+#### Backend - Production Readiness
+- **Order Service (Java)**
+  - Added `micrometer-registry-prometheus` for monitoring/observability
+- **Product Service (NestJS)**
+  - Implemented `helmet` for security headers
+  - Implemented `compression` for response optimization
+- **Inventory Service (Go)**
+  - Migrated to Structured Logging with `log/slog` (JSON format)
+  - Added OpenTelemetry Tracing with `otelchi` and `otelpgx`
 
 ### 🔧 Changed
 

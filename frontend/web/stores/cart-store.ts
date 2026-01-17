@@ -9,6 +9,8 @@ interface CartItem {
     quantity: number
     image: string
     variant?: string
+    sellerId?: string
+    stock?: number
 }
 
 interface CartStore {
