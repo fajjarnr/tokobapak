@@ -5,6 +5,7 @@ import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { loginSchema, type LoginInput } from '@/lib/validations/auth'
+import { authApi } from '@/lib/api/auth'
 import { useAuthStore } from '@/stores/auth-store'
 import { Button } from '@/components/ui/button'
 import {
@@ -40,31 +41,32 @@ export default function LoginPage() {
 
     async function onSubmit(data: LoginInput) {
         setIsLoading(true)
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1500))
+        try {
+            const response = await authApi.login(data)
 
-        if (data.email === 'user@example.com' && data.password === 'password123') {
+            // Assuming response structure matches AuthResponse
+            // If backend returns 'accessToken', adjust accordingly.
+            const { token, refreshToken, user } = response
+
             setUser({
-                id: '1',
-                name: 'TokoBapak User',
-                email: data.email,
-                image: 'https://github.com/shadcn.png'
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                image: `https://api.dicebear.com/7.x/initials/svg?seed=${user.name}`, // Fallback/Generated image
             })
+
+            // setTokens(token, refreshToken) // Need to expose setTokens from store or use it logic inside setUser?
+            // Checking store... setTokens is separate.
+            useAuthStore.getState().setTokens(token, refreshToken)
+
             toast.success('Successfully logged in!')
             router.push('/')
-        } else {
-            // Allow any login for demo purposes if valid format, or specific failure simulation
-            // For now, let's just log them in to make it easy for the User to test
-            setUser({
-                id: '2',
-                name: 'Demo User',
-                email: data.email,
-                image: '',
-            })
-            toast.success('Logged in (Demo Mode)')
-            router.push('/')
+        } catch (error: any) {
+            console.error('Login error:', error)
+            toast.error(error.message || 'Invalid email or password')
+        } finally {
+            setIsLoading(false)
         }
-        setIsLoading(false)
     }
 
     return (

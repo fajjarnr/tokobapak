@@ -1,10 +1,10 @@
-
 'use client'
 
 import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { registerSchema, type RegisterInput } from '@/lib/validations/auth'
+import { authApi } from '@/lib/api/auth'
 import { useAuthStore } from '@/stores/auth-store'
 import { Button } from '@/components/ui/button'
 import {
@@ -39,19 +39,31 @@ export default function RegisterPage() {
 
     async function onSubmit(data: RegisterInput) {
         setIsLoading(true)
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1500))
+        try {
+            const response = await authApi.register(data)
 
-        setUser({
-            id: '3',
-            name: data.name,
-            email: data.email,
-            image: `https://api.dicebear.com/7.x/initials/svg?seed=${data.name}`,
-        })
-
-        toast.success('Account created successfully!')
-        router.push('/')
-        setIsLoading(false)
+            // If backend auto-logs in:
+            if (response.token) {
+                const { token, refreshToken, user } = response
+                setUser({
+                    id: user.id || 'new-user',
+                    name: user.name || data.name,
+                    email: user.email || data.email,
+                    image: `https://api.dicebear.com/7.x/initials/svg?seed=${data.name}`,
+                })
+                useAuthStore.getState().setTokens(token, refreshToken)
+                toast.success('Account created successfully!')
+                router.push('/')
+            } else {
+                toast.success('Account created! Please login.')
+                router.push('/login')
+            }
+        } catch (error: any) {
+            console.error('Register error:', error)
+            toast.error(error.message || 'Registration failed')
+        } finally {
+            setIsLoading(false)
+        }
     }
 
     return (
