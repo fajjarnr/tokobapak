@@ -7,19 +7,21 @@ import { Minus, Plus, Trash2, ArrowRight, ShieldCheck, Loader2 } from 'lucide-re
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import { Input } from '@/components/ui/input'
 import { useHybridCart } from '@/hooks/use-hybrid-cart'
-
+import { toast } from 'sonner'
 import { formatPrice } from '@/lib/utils'
 
+
 export default function CartPage() {
-    const { 
-        items, 
-        totalPrice, 
-        updateQuantity, 
-        removeItem, 
-        isAuthenticated, 
-        isLoading, 
-        isUpdating 
+    const {
+        items,
+        totalPrice,
+        updateQuantity,
+        removeItem,
+        isAuthenticated,
+        isLoading,
+        isUpdating
     } = useHybridCart()
 
     // Voucher Logic
@@ -149,8 +151,8 @@ export default function CartPage() {
 
                             {/* Coupon Code */}
                             <div className="flex gap-2">
-                                <Input 
-                                    placeholder="Coupon code" 
+                                <Input
+                                    placeholder="Coupon code"
                                     value={voucherCode}
                                     onChange={(e) => setVoucherCode(e.target.value)}
                                 />

@@ -203,6 +203,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Product Service (NestJS)**
   - Established TDD pattern with isolated Unit Tests (`.spec.ts`)
   - Integrated with Jest for Use Case testing
+- **End-to-End Testing (Frontend Web)**
+  - Playwright testing framework integration
+  - Page Object Model pattern implementation
+  - Test suites: Homepage, Authentication, Products, Cart, Checkout
+  - 50 test cases covering critical user flows
+  - HTML test reporting with screenshots and videos
+
+### 🐛 Fixed
+- **Cart Page** - Added missing imports for `Input` and `toast` components
 
 
 ### 🔧 Changed
