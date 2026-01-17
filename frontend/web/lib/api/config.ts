@@ -1,6 +1,10 @@
 // API Configuration for TokoBapak Backend Services
+// Uses relative URLs in browser (proxied by Next.js rewrites) to avoid CORS
+// Full URL only needed for SSR or when NEXT_PUBLIC_API_URL is set
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+const API_BASE_URL = typeof window === 'undefined'
+  ? (process.env.NEXT_PUBLIC_API_URL || 'http://api-gateway')
+  : '';
 
 // Service URLs - mapped through API Gateway
 export const API_ENDPOINTS = {
