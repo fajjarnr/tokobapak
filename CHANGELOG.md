@@ -70,6 +70,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - PostgreSQL with pgx driver
   - Docker production deployment ready
 
+#### Backend - Notification Service
+- **Notification Service (NestJS 10)** - Multi-channel Notifications
+  - BullMQ for background job processing
+  - Email, SMS, and Push notification channels
+  - Kafka consumer for event-driven notifications
+  - Redis-backed job queues with retry logic
+  - Docker production deployment ready
+
 #### Backend - Product Service
 - **Product Service (NestJS)** - First backend microservice
   - Full CRUD endpoints with pagination

@@ -309,6 +309,40 @@ services:
       retries: 3
       start_period: 10s
 
+  # Notification Service (NestJS + BullMQ)
+  notification-service:
+    build:
+      context: ../../backend/services/notification-service
+      dockerfile: Dockerfile
+    container_name: tokobapak_notification_service
+    restart: always
+    ports:
+      - "3009:3009"
+    environment:
+      - PORT=3009
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - KAFKA_BROKERS=kafka:29092
+    depends_on:
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3009/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
 volumes:
   postgres_data:
   redis_data:
