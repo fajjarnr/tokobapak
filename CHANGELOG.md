@@ -199,6 +199,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Migrated to Structured Logging with `log/slog` (JSON format)
   - Added OpenTelemetry Tracing with `otelchi` and `otelpgx`
 
+#### Testing
+- **Product Service (NestJS)**
+  - Established TDD pattern with isolated Unit Tests (`.spec.ts`)
+  - Integrated with Jest for Use Case testing
+
+
 ### 🔧 Changed
 
 #### Infrastructure
