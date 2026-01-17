@@ -61,12 +61,21 @@ public class OrderService {
         log.info("Order created with ID: {}", savedOrder.getId());
 
         // Publish event
+        // Publish event
+        List<OrderCreatedEvent.EventOrderItem> eventItems = savedOrder.getItems().stream()
+                .map(item -> OrderCreatedEvent.EventOrderItem.builder()
+                        .productId(item.getProductId())
+                        .quantity(item.getQuantity())
+                        .build())
+                .collect(Collectors.toList());
+
         OrderCreatedEvent event = OrderCreatedEvent.builder()
                 .orderId(savedOrder.getId())
                 .userId(savedOrder.getUserId())
                 .totalAmount(savedOrder.getTotalAmount())
                 .status(savedOrder.getStatus().name())
                 .createdAt(savedOrder.getCreatedAt())
+                .items(eventItems)
                 .build();
         
         streamBridge.send("orderCreated-out-0", event);
