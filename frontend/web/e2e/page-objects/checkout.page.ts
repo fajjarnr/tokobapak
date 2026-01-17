@@ -36,13 +36,13 @@ export class CheckoutPage {
     constructor(page: Page) {
         this.page = page;
 
-        // Shipping Address
-        this.firstNameInput = page.locator('#first-name').or(page.locator('input[placeholder*="John"]'));
-        this.lastNameInput = page.locator('#last-name').or(page.locator('input[placeholder*="Doe"]'));
-        this.addressInput = page.locator('#address').or(page.locator('input[placeholder*="Jalan"]').or(page.locator('input[placeholder*="Address"]')));
-        this.cityInput = page.locator('#city').or(page.locator('input[placeholder*="Jakarta"]'));
-        this.postalCodeInput = page.locator('#zip').or(page.locator('input[placeholder*="12345"]'));
-        this.phoneInput = page.locator('#phone').or(page.locator('input[placeholder*="08"]'));
+        // Shipping Address - use first() to avoid strict mode violations
+        this.firstNameInput = page.locator('#first-name');
+        this.lastNameInput = page.locator('#last-name');
+        this.addressInput = page.locator('#address');
+        this.cityInput = page.locator('#city');
+        this.postalCodeInput = page.locator('#zip');
+        this.phoneInput = page.locator('#phone');
 
         // Shipping Method
         this.standardShipping = page.locator('input[value="standard"]').or(page.locator('button[data-state]').filter({ hasText: /standard/i }));

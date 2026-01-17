@@ -120,9 +120,10 @@ test.describe('Authentication - Register', () => {
     test('should display register page correctly', async ({ page }) => {
         await page.goto('/register');
 
-        // Check for register form elements
-        await expect(page.locator('h1, h2').filter({ hasText: /register|sign up|create account/i })).toBeVisible();
-        await expect(page.locator('input[name="email"], input[type="email"]')).toBeVisible();
+        // Check for register form elements - use data-testid or more specific selectors
+        const title = page.locator('[data-testid="register-title"]').or(page.locator('h1, h2').filter({ hasText: /register|sign up|create account/i }));
+        await expect(title).toBeVisible();
+        await expect(page.locator('input[name="email"], input[type="email"]').first()).toBeVisible();
         await expect(page.locator('input[name="password"], input[type="password"]').first()).toBeVisible();
         await expect(page.locator('button[type="submit"]')).toBeVisible();
     });

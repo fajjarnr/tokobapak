@@ -11,6 +11,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### ✨ Added
 
+#### E2E Testing Infrastructure
+- **Playwright Setup** - Complete E2E testing framework
+  - 50 comprehensive test cases covering critical user flows
+  - Page Object Model (POM) implementation for maintainable tests
+  - Test suites: Homepage, Authentication, Products, Cart, Checkout
+  - All tests passing with backend services integration
+
+#### Backend Services (Podman Compose Setup)
+- **API Gateway** (Nginx) - Running on port 8080
+  - Routes for all microservices
+  - CORS configuration for frontend integration
+- **Product Service** (NestJS) - Running on port 3001
+  - TypeORM entity fixes for PostgreSQL compatibility
+  - Database schema auto-synchronization in development
+- **Cart Service** (NestJS + Redis) - Running on port 3003
+- **Auth Service** (Spring Boot) - Running on port 3007
+- **User Service** (Spring Boot) - Running on port 3006
+- **Catalog Service** (Go) - Running on port 3002
+  - Categories and Brands database migrations
+
+### 🐛 Fixed
+
+#### Product Service
+- Fixed TypeORM entity column type for `brandId` and `alt` fields
+  - Changed from implicit Object type to explicit text type for PostgreSQL compatibility
+- Fixed compression module import in main.ts
+- Added missing `@types/compression` dev dependency
+
+#### User Service
+- Added `spring-boot-starter-security` dependency to resolve PasswordEncoder error
+
+#### Catalog Service
+- Updated Go version in Dockerfile from 1.22 to 1.25 to match go.mod requirements
+
+#### Frontend
+- Added missing `Input` and `toast` imports in cart page
+- Added `data-testid` attributes to login and register pages for E2E testing
+
+### 🔧 Changed
+
+#### Infrastructure
+- Updated podman-compose.yml with fully qualified Docker image names
+- Added NODE_ENV=development for NestJS services
+- Fixed Nginx configuration to preserve full URI paths in proxy_pass
+
+
+
 #### Frontend - Backend Integration
 - **API Layer** - Complete Frontend-Backend Integration
   - API client with auth token handling

@@ -42,7 +42,7 @@ export class ProductMedia {
   @Column({ default: 0 })
   order: number;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   alt: string | null;
 
   @CreateDateColumn()

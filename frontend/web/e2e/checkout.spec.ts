@@ -20,15 +20,29 @@ test.describe('Checkout', () => {
 
     test.describe('Checkout with Items', () => {
         test.beforeEach(async ({ page }) => {
-            // Add item to cart first
-            await page.goto('/product/1');
+            // Use localStorage to add cart item directly for reliable testing
+            await page.goto('/');
             await page.waitForLoadState('networkidle');
 
-            const addToCartBtn = page.locator('button:has-text("Add to Cart"), button:has-text("Add to Bag")');
-            if (await addToCartBtn.count() > 0) {
-                await addToCartBtn.click();
-                await page.waitForTimeout(1500);
-            }
+            // Add item to cart via localStorage (Zustand persist)
+            await page.evaluate(() => {
+                const cartItem = {
+                    id: 'test-product-checkout',
+                    productId: '276dc722-0c4d-404c-84ab-321be82455f7',
+                    name: 'Test Product for Checkout',
+                    price: 150000,
+                    quantity: 2,
+                    image: '/placeholder.svg'
+                };
+                const cartState = {
+                    state: {
+                        items: [cartItem],
+                        isLoading: false
+                    },
+                    version: 0
+                };
+                localStorage.setItem('cart-storage', JSON.stringify(cartState));
+            });
 
             // Navigate to checkout
             await page.goto('/checkout');

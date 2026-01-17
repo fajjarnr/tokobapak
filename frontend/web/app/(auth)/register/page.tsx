@@ -57,8 +57,8 @@ export default function RegisterPage() {
     return (
         <Card className="w-full">
             <CardHeader className="space-y-1">
-                <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-2xl font-bold" data-testid="register-title">Create an account</CardTitle>
+                <CardDescription data-testid="register-description">
                     Enter your email below to create your account
                 </CardDescription>
             </CardHeader>

@@ -70,8 +70,8 @@ export default function LoginPage() {
     return (
         <Card className="w-full">
             <CardHeader className="space-y-1">
-                <CardTitle className="text-2xl font-bold">Login</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-2xl font-bold" data-testid="login-title">Login</CardTitle>
+                <CardDescription data-testid="login-description">
                     Enter your email to sign in to your account
                 </CardDescription>
             </CardHeader>
@@ -136,6 +136,7 @@ export default function LoginPage() {
                                                 checked={field.value}
                                                 onCheckedChange={field.onChange}
                                                 disabled={isLoading}
+                                                data-testid="remember-me-checkbox"
                                             />
                                         </FormControl>
                                         <div className="space-y-1 leading-none">

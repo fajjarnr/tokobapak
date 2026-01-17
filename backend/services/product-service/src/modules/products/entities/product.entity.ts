@@ -46,7 +46,7 @@ export class Product {
   @Index()
   categoryId: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   brandId: string | null;
 
   @Column({
