@@ -100,6 +100,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fuzzy matching and auto-suggest
   - Product indexing API
 
+#### Backend - Chat Service
+- **Chat Service (NestJS 10)** - Real-time Messaging
+  - Socket.io WebSocket gateway
+  - Room-based chat rooms
+  - Typing indicators
+  - Message history
+
+#### Backend - Recommendation Service
+- **Recommendation Service (Python FastAPI)** - ML Recommendations
+  - Content-based filtering algorithm
+  - Similar products API
+  - User interaction tracking
+  - Trending products
+
+#### Backend - Media Service
+- **Media Service (Go 1.22)** - File Upload
+  - Image/video upload handling
+  - Format validation (JPG, PNG, WebP, MP4)
+  - Local file storage (S3 ready)
+  - File serving API
+
+#### Backend - Seller Service
+- **Seller Service (NestJS 10)** - Seller Management
+  - Seller registration and profiles
+  - Status workflow (PENDING, ACTIVE, SUSPENDED)
+  - Verification system
+  - Stats tracking
+
 #### Backend - Product Service
 - **Product Service (NestJS)** - First backend microservice
   - Full CRUD endpoints with pagination

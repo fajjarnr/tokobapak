@@ -457,7 +457,117 @@ services:
       retries: 3
       start_period: 30s
 
+  # Chat Service (NestJS + Socket.io)
+  chat-service:
+    build:
+      context: ../../backend/services/chat-service
+      dockerfile: Dockerfile
+    container_name: tokobapak_chat_service
+    restart: always
+    ports:
+      - "3013:3013"
+    environment:
+      - PORT=3013
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3013/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Recommendation Service (Python FastAPI)
+  recommendation-service:
+    build:
+      context: ../../backend/services/recommendation-service
+      dockerfile: Dockerfile
+    container_name: tokobapak_recommendation_service
+    restart: always
+    ports:
+      - "3014:3014"
+    environment:
+      - PORT=3014
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import httpx; httpx.get('http://localhost:3014/health')",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Media Service (Go)
+  media-service:
+    build:
+      context: ../../backend/services/media-service
+      dockerfile: Dockerfile
+    container_name: tokobapak_media_service
+    restart: always
+    ports:
+      - "3015:3015"
+    environment:
+      - PORT=3015
+      - STORAGE_PATH=/app/uploads
+    volumes:
+      - media_uploads:/app/uploads
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3015/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Seller Service (NestJS)
+  seller-service:
+    build:
+      context: ../../backend/services/seller-service
+      dockerfile: Dockerfile
+    container_name: tokobapak_seller_service
+    restart: always
+    ports:
+      - "3016:3016"
+    environment:
+      - PORT=3016
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/tokobapak_sellers?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3016/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
 volumes:
   postgres_data:
   redis_data:
   elasticsearch_data:
+  media_uploads:
