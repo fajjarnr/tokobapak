@@ -92,4 +92,30 @@ public class OrderService {
     public Page<Order> getUserOrders(UUID userId, Pageable pageable) {
         return orderRepository.findByUserId(userId, pageable);
     }
+
+    @Transactional
+    public void handleInventoryStockReserved(UUID orderId) {
+        log.info("Stock reserved for order: {}. Updating status to PENDING_PAYMENT", orderId);
+        Order order = getOrder(orderId);
+        // Only update if current status is CREATED or appropriate
+        if (order.getStatus() == OrderStatus.CREATED) {
+            order.setStatus(OrderStatus.PENDING_PAYMENT);
+            orderRepository.save(order);
+            log.info("Order {} status updated to PENDING_PAYMENT", orderId);
+        } else {
+            log.warn("Order {} status mismatch. Current: {}. Expected: CREATED", orderId, order.getStatus());
+        }
+    }
+
+    @Transactional
+    public void handleInventoryStockFailed(UUID orderId, String reason) {
+        log.error("Stock reservation failed for order: {}. Reason: {}. Cancelling order.", orderId, reason);
+        Order order = getOrder(orderId);
+        if (order.getStatus() == OrderStatus.CREATED) {
+            order.setStatus(OrderStatus.CANCELLED);
+            // Ideally store reason somewhere
+            orderRepository.save(order);
+            log.info("Order {} status updated to CANCELLED", orderId);
+        }
+    }
 }
