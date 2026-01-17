@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### ✨ Added
 
+#### Frontend - Backend Integration
+- **API Layer** - Complete Frontend-Backend Integration
+  - API client with auth token handling
+  - Centralized endpoint configuration for all 17 services
+  - React Query hooks for data fetching
+  - Type-safe API responses with TypeScript
+  - Services: Auth, Products, Cart, Orders, Reviews, Recommendations, Promotions
+
 #### Frontend - Shop Flow
 - **Product Listing Enhancements**
   - Advanced Filtering (Price range, Categories, Brands via checkbox/slider)
