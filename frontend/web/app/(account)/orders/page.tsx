@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Package, Truck, Calendar, ArrowRight } from 'lucide-react'
@@ -9,32 +9,24 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { orderApi, Order } from '@/lib/api/orders'
+import { Order } from '@/lib/api/orders'
+import { useOrders } from '@/hooks/use-orders'
 import { useAuthStore } from '@/stores/auth-store'
 import { toast } from 'sonner'
 
 export default function OrdersPage() {
     const { isAuthenticated, user } = useAuthStore()
-    const [orders, setOrders] = useState<Order[]>([])
-    const [loading, setLoading] = useState(true)
+    const { data, isLoading: loading, error } = useOrders()
+
+    // Extract orders from the response
+    const orders = data?.orders ?? []
 
     useEffect(() => {
-        if (isAuthenticated) {
-            fetchOrders()
-        }
-    }, [isAuthenticated])
-
-    const fetchOrders = async () => {
-        try {
-            const data = await orderApi.getAll()
-            setOrders(data)
-        } catch (error) {
+        if (error) {
             console.error('Failed to fetch orders:', error)
             toast.error('Failed to load order history')
-        } finally {
-            setLoading(false)
         }
-    }
+    }, [error])
 
     const getStatusColor = (status: string) => {
         switch (status.toLowerCase()) {
@@ -68,7 +60,7 @@ export default function OrdersPage() {
 
     if (!isAuthenticated) {
         return (
-            <div className="container mx-auto px-4 py-16 text-center">
+            <div className="py-16 text-center">
                 <h1 className="text-2xl font-bold mb-4">Please Login</h1>
                 <p className="text-muted-foreground mb-8">You need to be logged in to view your orders.</p>
                 <Button asChild><Link href="/login">Login</Link></Button>
@@ -78,7 +70,7 @@ export default function OrdersPage() {
 
     if (loading) {
         return (
-            <div className="container mx-auto px-4 py-8 space-y-4">
+            <div className="space-y-4">
                 <div className="h-8 w-48 bg-muted animate-pulse rounded" />
                 <div className="space-y-4">
                     {[1, 2, 3].map((i) => (
@@ -91,7 +83,7 @@ export default function OrdersPage() {
 
     if (orders.length === 0) {
         return (
-            <div className="container mx-auto px-4 py-16 text-center">
+            <div className="py-16 text-center">
                 <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
                     <Package className="h-10 w-10 text-muted-foreground" />
                 </div>
@@ -103,8 +95,8 @@ export default function OrdersPage() {
     }
 
     return (
-        <div className="container mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold mb-8">My Orders</h1>
+        <div className="space-y-6">
+            <h2 className="text-2xl font-bold tracking-tight">Order History</h2>
 
             <div className="space-y-6">
                 {orders.map((order) => (

@@ -132,7 +132,7 @@ export default function OrderDetailPage() {
 
     if (loading) {
         return (
-            <div className="container mx-auto px-4 py-8 space-y-8">
+            <div className="space-y-8">
                 <div className="h-8 w-64 bg-muted animate-pulse rounded" />
                 <div className="grid md:grid-cols-3 gap-8">
                     <div className="md:col-span-2 space-y-6">
@@ -151,7 +151,7 @@ export default function OrderDetailPage() {
     const isCancelled = order.status.toLowerCase() === 'cancelled'
 
     return (
-        <div className="container mx-auto px-4 py-8">
+        <div className="space-y-6">
             <div className="mb-6">
                 <Button variant="ghost" asChild className="pl-0 hover:pl-2 transition-all">
                     <Link href="/orders">

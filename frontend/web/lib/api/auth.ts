@@ -2,15 +2,31 @@ import { apiClient } from './client'
 import { API_ENDPOINTS } from './config'
 import { LoginInput, RegisterInput } from '@/lib/validations/auth'
 
+// Re-export types from validations for compatibility
+export type LoginRequest = LoginInput
+export type RegisterRequest = RegisterInput
+
+export interface User {
+  id: string
+  email: string
+  name: string
+  role: string
+  phone?: string
+  avatar?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface UpdateProfileRequest {
+  name?: string
+  phone?: string
+  avatar?: string
+}
+
 export interface AuthResponse {
   token: string
   refreshToken: string
-  user: {
-    id: string
-    email: string
-    name: string
-    role: string
-  }
+  user: User
 }
 
 export const authApi = {
@@ -30,9 +46,10 @@ export const authApi = {
 
 export const userApi = {
   getMe: async () => {
-    return apiClient.get(API_ENDPOINTS.users.me)
+    return apiClient.get<User>(API_ENDPOINTS.users.me)
   },
-  updateProfile: async (data: any) => {
-    return apiClient.put(API_ENDPOINTS.users.update, data)
+  updateProfile: async (data: UpdateProfileRequest) => {
+    return apiClient.put<User>(API_ENDPOINTS.users.update, data)
   }
 }
+
