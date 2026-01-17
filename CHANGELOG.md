@@ -54,6 +54,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Flyway migrations for order tables
   - Podman Containerfile (multi-stage build)
 
+#### Backend - Payment Service
+- **Payment Service (Java Spring Boot 3.4)** - Payment Processing Microservice
+  - Kafka consumer for `order.created`
+  - Idempotent payment processing
+  - Simulated payment gateway integration
+  - Flyway migrations for payment tables
+  - Podman Containerfile (multi-stage build)
+
 #### Backend - Product Service
 - **Product Service (NestJS)** - First backend microservice
   - Full CRUD endpoints with pagination
