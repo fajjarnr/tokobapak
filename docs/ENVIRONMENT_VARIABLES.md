@@ -25,7 +25,7 @@ cp backend/services/product-service/.env.example backend/services/product-servic
 Or use the provided Docker Compose which sets all variables:
 
 ```bash
-cd infrastructure/docker
+cd infrastructure/local
 podman-compose up -d
 ```
 

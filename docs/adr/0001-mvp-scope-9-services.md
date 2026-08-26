@@ -1,0 +1,5 @@
+# MVP 9 Service dengan Hide 9 Service Lain
+
+Konteks: TokoBapak memiliki 18 service polyglot. Journey MVP yang disepakati adalah Browse → Search → Keranjang → Checkout → Bayar (via PayU) → Kirim → Notifikasi. Kami memutuskan keep 9 service: auth-service, user-service, product-service (merge catalog+inventory → stock kolom), search-service (ES 1 index), cart-service, order-service, payment-service (adapter PayU), shipping-service (mock flat), notification-service; hide 9 lainnya (review, chat, media, promotion, seller standalone, recommendation, analytics, plus inventory standalone dan catalog standalone) selama 1 bulan validasi dengan `enabled=false` di Helm/compose, bukan `git rm`.
+
+Keputusan ini hard to reverse karena menggabungkan inventory ke product dan seller ke users.role, serta mematikan consumer Kafka. Surprising karena `docs/architecture/ARCHITECTURE.md` v2.0 menetapkan Technology Agnostic 18 service. Trade-off: memotong 50% effort dan fokus ke transaksi inti vs kehilangan fitur trust (review), engagement (chat), dan monetisasi (promotion) di MVP.

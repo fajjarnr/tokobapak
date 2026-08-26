@@ -19,20 +19,23 @@
 
 TokoBapak is a multi-vendor e-commerce marketplace built with a **microservices architecture** to ensure scalability, maintainability, and independent deployment.
 
-### Key Characteristics
-
-| Aspect | Choice |
-|--------|--------|
-| **Architecture Style** | Microservices + Event-Driven |
-| **API Protocol** | REST + gRPC (internal) |
-| **Message Broker** | Apache Kafka |
-| **Container Runtime** | Docker / Podman |
-| **Orchestration** | Kubernetes |
-| **Languages** | TypeScript, Java, Go, Python |
+| Aspect | Choice (MVP 26 Aug 2026) |
+|--------|--------------------------|
+| **Architecture Style** | Microservices + Event-Driven (Saga) |
+| **API Protocol** | REST (MVP) + gRPC future |
+| **Message Broker** | Apache Kafka self-host 1 broker (Strimzi) → MSK Serverless later |
+| **Container Runtime** | Podman (local) / Docker |
+| **Orchestration** | AWS EKS EC2 (ALB + Traefik Ingress) — MVP hemat |
+| **Languages** | Go 1.27.0 uniform untuk 9 service MVP (hide 9 lain) |
+| **Infra Local** | Podman Compose di m6a.4xlarge (postgres:16, redis:alpine, kafka:7.5.0) — tanpa LocalStack |
+| **Infra Cloud** | Full AWS (EKS + RDS PostgreSQL 18 t4g.micro + ElastiCache t4g.micro + self-host Kafka) — hemat ~$70/bulan |
+| **Frontend** | TanStack Start + TanStack Router + TanStack Query (Vite) — buang Next.js 15 (ADR 0004) |
 
 ---
 
-## High-Level Architecture
+## High-Level Architecture (MVP)
+
+> **MVP 26 Aug 2026**: `Web App (Next.js)` → `Web App (TanStack Start + Vite)`, `Kong` → `Traefik` (migrate to Kong jika butuh 3scale), `PostgreSQL HA Patroni` → `RDS PostgreSQL 18 t4g.micro`, `Redis Sentinel` → `ElastiCache t4g.micro`, `Kafka Strimzi 3 broker` → `Kafka self-host 1 broker`.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────┐
@@ -41,8 +44,9 @@ TokoBapak is a multi-vendor e-commerce marketplace built with a **microservices 
 │                    │                    │                                         │
 │   ┌────────────┐   │   ┌────────────┐   │   ┌────────────┐                       │
 │   │ Web App    │   │   │ Mobile App │   │   │ Admin      │                       │
-│   │ (Next.js)  │   │   │ (React     │   │   │ Dashboard  │                       │
-│   │ :3000      │   │   │  Native)   │   │   │ :3100      │                       │
+│   │(TanStack   │   │   │ (React     │   │   │ Dashboard  │                       │
+│   │ Start+Vite)│   │   │  Native)   │   │   │(TanStack)  │                       │
+│   │ :3000      │   │   │            │   │   │ :3100      │                       │
 │   └─────┬──────┘   │   └─────┬──────┘   │   └─────┬──────┘                       │
 │         │          │         │          │         │                              │
 └─────────┼──────────┴─────────┼──────────┴─────────┼──────────────────────────────┘
@@ -50,14 +54,14 @@ TokoBapak is a multi-vendor e-commerce marketplace built with a **microservices 
           └────────────────────┼────────────────────┘
                                │ HTTPS
                     ┌──────────▼──────────┐
-                    │   Load Balancer     │
-                    │   (AWS ALB / Nginx) │
+                    │   AWS ALB           │
+                    │ (TLS + WAF)         │
                     └──────────┬──────────┘
                                │
                     ┌──────────▼──────────┐
-                    │    API Gateway      │
-                    │   (Nginx / Kong)    │
-                    │      :8080          │
+                    │  Traefik Ingress    │
+                    │  (EKS) :8080        │
+                    │  note: migrate → Kong if 3scale needed |
                     └──────────┬──────────┘
                                │
          ┌─────────────────────┼─────────────────────┐
@@ -65,17 +69,13 @@ TokoBapak is a multi-vendor e-commerce marketplace built with a **microservices 
          ▼                     ▼                     ▼
 ┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐
 │  Auth Cluster   │   │  Core Services  │   │ Support Services│
-│  ─────────────  │   │  ─────────────  │   │  ─────────────  │
-│  • Auth         │   │  • Product      │   │  • Search       │
-│  • User         │   │  • Catalog      │   │  • Notification │
-│                 │   │  • Cart         │   │  • Media        │
-│                 │   │  • Order        │   │  • Chat         │
-│                 │   │  • Payment      │   │  • Analytics    │
-│                 │   │  • Shipping     │   │                 │
-│                 │   │  • Inventory    │   │                 │
-│                 │   │  • Seller       │   │                 │
-│                 │   │  • Review       │   │                 │
-│                 │   │  • Promotion    │   │                 │
+│  (Go 1.27)      │   │  (Go 1.27)      │   │  (Go 1.27)      │
+│  • Auth :3007   │   │  • Product :3001│   │  • Search :3010 │
+│  • User :3006   │   │  • Cart :3003   │   │  • Notification:3004 |
+│                 │   │  • Order :3004  │   │  • Shipping :3008 |
+│                 │   │  • Payment :3005│   │                 │
+│                 │   │    ↕ PayU SNAP-BI (public HTTPS)     │
+│                 │   │  • Inventory→merge Product.stock      │
 └────────┬────────┘   └────────┬────────┘   └────────┬────────┘
          │                     │                     │
          └─────────────────────┼─────────────────────┘
@@ -84,14 +84,14 @@ TokoBapak is a multi-vendor e-commerce marketplace built with a **microservices 
          │                     │                     │
          ▼                     ▼                     ▼
 ┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐
-│   PostgreSQL    │   │     Redis       │   │  Elasticsearch  │
-│     :5432       │   │     :6379       │   │     :9200       │
+│ RDS PostgreSQL  │   │  ElastiCache    │   │  Kafka self-host│
+│  t4g.micro      │   │  t4g.micro      │   │  1 broker (EKS) │
+│  single-AZ MVP  │   │  single node    │   │  → MSK Serverless later |
 └─────────────────┘   └─────────────────┘   └─────────────────┘
-                               │
-                    ┌──────────▼──────────┐
-                    │   Apache Kafka      │
-                    │     :9092           │
-                    └─────────────────────┘
+         ┌─────────────────────┼─────────────────────┐
+         │  Local: postgres:18-alpine / redis:alpine / cp-kafka:7.5.0 (podman m6a.4xlarge) |
+         │  Cloud: EKS EC2 m6i.large + Terraform + ArgoCD |
+         └─────────────────────────────────────────────┘
 ```
 
 ---
@@ -143,30 +143,30 @@ TokoBapak is a multi-vendor e-commerce marketplace built with a **microservices 
 
 ### Overview
 
-| Service | Technology | Port | Database | Description |
-|---------|------------|------|----------|-------------|
-| **auth-service** | Java (Spring Boot) | 3005 | PostgreSQL | JWT authentication, OAuth |
-| **user-service** | Java (Spring Boot) | 3006 | PostgreSQL | User profiles, addresses |
-| **product-service** | NestJS | 3001 | PostgreSQL | Products, variants, media |
-| **catalog-service** | Go | 3002 | PostgreSQL | Categories, brands |
-| **cart-service** | NestJS | 3003 | Redis | Shopping cart management |
-| **order-service** | Java (Spring Boot) | 3007 | PostgreSQL | Order processing |
-| **payment-service** | Java (Spring Boot) | 3008 | PostgreSQL | Payment gateway integration |
-| **shipping-service** | Go | 3009 | PostgreSQL | Courier integration |
-| **inventory-service** | Go | 3011 | PostgreSQL | Stock management |
-| **seller-service** | NestJS | 3012 | PostgreSQL | Seller management |
-| **promotion-service** | Java (Spring Boot) | 3013 | PostgreSQL | Vouchers, promotions |
-| **review-service** | Go | 3014 | PostgreSQL | Product reviews |
-| **search-service** | NestJS | 3010 | Elasticsearch | Full-text search |
-| **notification-service** | NestJS | 3004 | Redis | Email, SMS, Push |
-| **chat-service** | NestJS | 3015 | MongoDB | Real-time messaging |
-| **media-service** | Go | 3016 | S3/R2 | Image/video storage |
-| **recommendation-service** | Python (FastAPI) | 3017 | - | ML recommendations |
-| **analytics-service** | Python (FastAPI) | 3018 | ClickHouse | Business analytics |
+| Service | Technology | Port | Database | Description | Status |
+|---------|------------|------|----------|-------------|--------|
+| **auth-service** | Go 1.27 (chi + golang-jwt) | 3007 | RDS PostgreSQL 18 t4g.micro | JWT + BFF HttpOnly+CSRF | **MVP keep** |
+| **user-service** | Go 1.27 | 3006 | RDS PostgreSQL 18 t4g.micro | Users + role SELLER | **MVP keep** |
+| **product-service** | Go 1.27 (sqlc+pgx) | 3001 | RDS PostgreSQL 18 t4g.micro `products(stock)` | Products + merge catalog+inventory | **MVP keep** |
+| **cart-service** | Go 1.27 (go-redis) | 3003 | ElastiCache t4g.micro | Cart TTL 7 hari merge sum | **MVP keep** |
+| **order-service** | Go 1.27 (Saga) | 3004 | RDS PostgreSQL 18 t4g.micro | Order Saga reserve | **MVP keep** |
+| **payment-service** | Go 1.27 → PayU SNAP-BI | 3005 | RDS PostgreSQL 18 t4g.micro `payments` | Thin adapter PayU transaction-service | **MVP keep** |
+| **shipping-service** | Go 1.27 | 3008 | RDS PostgreSQL 18 t4g.micro | Mock flat ongkir | **MVP keep** |
+| **search-service** | Go 1.27 (go-elasticsearch) | 3010 | Elasticsearch 1 index | Search products | **MVP keep** |
+| **notification-service** | Go 1.27 | 3009 | — (Kafka consumer) | Kafka `tokobapak.payment.completed.v1` | **MVP keep** |
+| ~~catalog-service~~ | Go | — | — | Merge ke product | hide |
+| ~~inventory-service~~ | Go | — | — | Merge ke product.stock | hide |
+| ~~seller-service~~ | NestJS | — | — | Merge ke users.role | hide |
+| ~~promotion-service~~ | Java | — | — | — | hide |
+| ~~review-service~~ | Go | — | — | — | hide |
+| ~~chat-service~~ | NestJS | — | — | — | hide |
+| ~~media-service~~ | Go | — | — | Langsung R2 | hide |
+| ~~recommendation-service~~ | Python | — | — | ML | hide |
+| ~~analytics-service~~ | Python | — | — | — | hide |
 
 ### Service Architecture Patterns
 
-#### NestJS Services (TypeScript)
+#### NestJS Services (TypeScript) — HIDE MVP (ADR 0001)
 
 ```
 src/
@@ -189,31 +189,38 @@ src/
         └── <feature>.module.ts
 ```
 
-#### Go Services (Clean Architecture)
+#### Go Services — Hexagonal Lightweight + Saga Choreography (tanpa starter, opsi b)
+
+> **Parity PayU** `domain/port/adapter` + outbox manual + saga choreography, tanpa `shared/outbox-starter`/`saga-starter` Java. 9 service MVP Go 1.27.
 
 ```
-cmd/
-└── server/
-    └── main.go                # Entry point
+cmd/server/main.go            # bootstrap, wire port → adapter
 
 internal/
-├── domain/                    # Business entities & interfaces
-│   ├── category.go
-│   └── errors.go
-├── usecase/                   # Business logic (application layer)
-│   └── category_uc.go
-├── repository/                # Data access (infrastructure)
-│   └── postgres/
-│       └── category_repo.go
-└── delivery/                  # Transport layer
-    └── http/
-        └── handler.go
+├── domain/
+│   ├── model/                 # Product, Order, Payment, Shipment
+│   │   └── errors.go
+│   └── port/                  # interface — hexagonal boundary
+│       ├── product_repository.go
+│       └── event_publisher.go
+├── application/service/       # use case, inject port
+│   ├── product_service.go
+│   └── order_service.go       # tx { insert order + outbox } → poller
+└── adapter/
+    ├── persistence/postgres/ # sqlc + pgx implement port
+    │   └── product_repo.go
+    ├── messaging/kafka/       # outbox poller SELECT FOR UPDATE SKIP LOCKED
+    │   └── outbox_poller.go  # publish tokobapak.<domain>.<event>.v1 + DLQ .dlq
+    ├── web/http/              # gin/chi handler → service (bukan repo)
+    │   └── handler.go
+    └── client/payu/           # SNAP-BI HMAC + X-Idempotency-Key
+        └── payu_client.go
 
-pkg/                           # Shared packages
-└── utils/
+migrations/                   # Flyway V1 + outbox table
+└── 001_create_outbox.sql     # id, topic, payload JSONB, created_at
 ```
 
-#### Java Services (Spring Boot)
+#### Java Services (Spring Boot) — HIDE MVP (ADR 0001)
 
 ```
 src/main/java/id/tokobapak/<service>/
@@ -233,6 +240,10 @@ src/main/java/id/tokobapak/<service>/
 ---
 
 ## Data Architecture
+
+### Database Strategy (Database per Service) + Outbox Manual (opsi b)
+
+> Tiap service MVP punya tabel `outbox` untuk exactly-once tanpa starter.
 
 ### Database Strategy (Database per Service)
 
@@ -267,7 +278,7 @@ src/main/java/id/tokobapak/<service>/
 
 | Storage Type | Technology | Use Case |
 |--------------|------------|----------|
-| **Relational** | PostgreSQL 16 | Transactional data (users, orders) |
+| **Relational** | PostgreSQL 18 | Transactional data (users, orders) |
 | **Key-Value** | Redis | Caching, sessions, cart |
 | **Document** | MongoDB | Chat messages |
 | **Search** | Elasticsearch 8 | Full-text product search |
@@ -407,93 +418,109 @@ src/main/java/id/tokobapak/<service>/
 
 ---
 
-## Infrastructure & Deployment
+## Infrastructure & Deployment — MVP (Podman Local vs Full AWS)
 
-### Container Architecture
+> **Keputusan infra 26 Aug 2026 (Q21–Q27)**: Local `Podman Compose` di `m6a.4xlarge` tanpa LocalStack (hemat, parity `postgres:18-alpine`/`redis:alpine`/`cp-kafka:7.5.0` single). Cloud full AWS `EKS EC2` + `RDS PostgreSQL 18 t4g.micro` + `ElastiCache t4g.micro` + `Kafka self-host 1 broker (Strimzi)` hemat ~$70/bulan (#MVP), `ALB → Traefik Ingress` (migrate → Kong jika butuh 3scale), `Terraform + Helm + ArgoCD`, `Prometheus/Grafana/Loki` self-host, PayU link `public HTTPS + HMAC SNAP-BI`.
+
+### Local vs Cloud Parity
+
+| Layer | Local (Podman `m6a.4xlarge`) | Cloud (AWS MVP) | Scale Path |
+|-------|------------------------------|-----------------|------------|
+| **Compute** | `infrastructure/local/podman-compose.yml` 9 service Go | `EKS EC2` managed node `m6i.large` | → `m6i.2xlarge` / Fargate |
+| **DB** | `postgres:18-alpine` single 5432 | `RDS PostgreSQL` `db.t4g.micro` single-AZ | → `db.t4g.small` Multi-AZ / Aurora Serverless v2 |
+| **Cache** | `redis:alpine` single 6379 | `ElastiCache` `cache.t4g.micro` single | → `cache.t4g.small` cluster / Serverless |
+| **Queue** | `cp-kafka:7.5.0` 1 broker + zookeeper | `Kafka self-host 1 broker` (Strimzi `t3.small`) di EKS | → `MSK Serverless` pay-per-GB |
+| **Search** | `elasticsearch:8` single | `AWS OpenSearch` `t3.small.search` atau ES di EKS | → managed OpenSearch |
+| **Gateway** | — (direct `localhost:3001–3010`) | `AWS ALB (TLS+WAF) → Traefik Ingress :8080` | → `Kong` jika butuh 3scale/portal |
+| **Frontend** | `vite dev :3000` TanStack Start | `S3 + CloudFront` + `ALB` | — |
+| **IaC** | — | `Terraform` state `S3+ DynamoDB` + `Helm` + `ArgoCD` | — |
+| **Secrets** | `.env` | `AWS Secrets Manager` | → Vault |
+| **Cost est** | `m6a.4xlarge` on-demand ~$0.69/jam (dev only) | ~$70/bulan data layer + ~$80 EKS EC2 | — |
+
+### Container Architecture (AWS EKS)
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│                      Kubernetes Cluster                           │
+│  AWS Cloud — EKS EC2 (m6i.large) + ALB + Traefik                 │
 ├──────────────────────────────────────────────────────────────────┤
-│                                                                   │
 │  ┌─────────────────────────────────────────────────────────────┐ │
-│  │                 Namespace: tokobapak-prod                    │ │
-│  │                                                              │ │
+│  │  Namespace: tokobapak-prod (9 Go 1.27 services)             │ │
+│  │  Traefik Ingress :8080 (ALB TLS terminates)                 │ │
 │  │  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐   │ │
-│  │  │  Deployment   │  │  Deployment   │  │  Deployment   │   │ │
-│  │  │ product-svc   │  │ order-svc     │  │ payment-svc   │   │ │
-│  │  │ replicas: 3   │  │ replicas: 3   │  │ replicas: 2   │   │ │
-│  │  └───────────────┘  └───────────────┘  └───────────────┘   │ │
-│  │                                                              │ │
-│  │  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐   │ │
-│  │  │ Service       │  │ Service       │  │ Service       │   │ │
-│  │  │ ClusterIP     │  │ ClusterIP     │  │ ClusterIP     │   │ │
-│  │  └───────────────┘  └───────────────┘  └───────────────┘   │ │
-│  │                                                              │ │
-│  │  ┌─────────────────────────────────────────────────────┐    │ │
-│  │  │           Ingress (nginx-ingress-controller)         │    │ │
-│  │  └─────────────────────────────────────────────────────┘    │ │
-│  └─────────────────────────────────────────────────────────────┘ │
-│                                                                   │
-│  ┌─────────────────────────────────────────────────────────────┐ │
-│  │                 Namespace: tokobapak-data                    │ │
-│  │                                                              │ │
-│  │  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐   │ │
-│  │  │ StatefulSet   │  │ StatefulSet   │  │ StatefulSet   │   │ │
-│  │  │ PostgreSQL    │  │ Redis         │  │ Kafka         │   │ │
-│  │  │ (HA Patroni)  │  │ (Sentinel)    │  │ (Strimzi)     │   │ │
-│  │  └───────────────┘  └───────────────┘  └───────────────┘   │ │
-│  └─────────────────────────────────────────────────────────────┘ │
+│  │  │ auth :3007    │  │ product :3001 │  │ order :3004   │   │ │
+│  │  │ user :3006    │  │ cart :3003    │  │ payment :3005 │   │ │
+│  │  │               │  │ search :3010  │  │ shipping:3008 │   │ │
+│  │  │               │  │               │  │ notify:3009   │   │ │
+│  │  └───────┬───────┘  └───────┬───────┘  └───────┬───────┘   │ │
+│  │          │                  │                  │            │ │
+│  │          └──────────────────┼──────────────────┘            │ │
+│  │                             │  Kafka 1 broker (Strimzi)     │ │
+│  └─────────────────────────────┼───────────────────────────────┘ │
+│                │               │                                │
+│  ┌─────────────▼───────────────▼──────────────────────────────┐ │
+│  │  Data: RDS PostgreSQL 18 t4g.micro :5432 │ ElastiCache t4g.micro :6379  │ │
+│  │  (single-AZ MVP)           │  (single node)               │ │
+│  └────────────────────────────────────────────────────────────┘ │
+│  PayU OpenShift ←──── public HTTPS + HMAC SNAP-BI + X-Idempotency (ADR 0003) |
+└──────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│  Local — Podman m6a.4xlarge (tanpa LocalStack)                    │
+│  postgres:18-alpine :5432 │ redis:alpine :6379 │ cp-kafka:7.5.0 :9092 |
+│  9 Go services :3001–3010 │ vite :3000 TanStack Start            │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-### Docker Image Strategy
+### Docker Image Strategy (MVP Go Uniform)
 
-| Service Type | Base Image | Final Size |
-|--------------|------------|------------|
-| NestJS | node:22-alpine | ~180MB |
-| Go | scratch / alpine | ~15MB |
-| Java | eclipse-temurin:21-jre-alpine | ~200MB |
-| Python | python:3.12-slim | ~150MB |
+| Service Type | Base Image | Final Size | Catatan |
+|--------------|------------|------------|---------|
+| **Go 1.27 MVP** | `golang:1.27-alpine` build → `scratch` / `alpine` | ~15MB | 9 service MVP |
+| Legacy NestJS | `node:22-alpine` | ~180MB | hide |
+| Legacy Java | `eclipse-temurin:21-jre-alpine` | ~200MB | hide |
+| Legacy Python | `python:3.12-slim` | ~150MB | hide |
 
-### CI/CD Pipeline
+### CI/CD Pipeline (MVP — Terraform + ArgoCD)
 
 ```
 ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│    Push     │───►│    Build    │───►│    Test     │───►│   Deploy    │
-│  (GitHub)   │    │  (Docker)   │    │ (Unit/E2E)  │    │ (Kubernetes)│
+│    Push     │───►│  Build Go   │───►│  Test +     │───►│  ArgoCD     │
+│  (GitHub)   │    │ 1.27 (Docker│    │  golangci   │    │  Sync EKS   │
+│             │    │  scratch)   │    │  vet + E2E  │    │  (Helm)     │
 └─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
                           │                  │
                           ▼                  ▼
-                   ┌─────────────┐    ┌─────────────┐
-                   │   Push to   │    │   Quality   │
-                   │   Registry  │    │    Gate     │
-                   └─────────────┘    └─────────────┘
+                   ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+                   │   Push ECR  │    │  Terraform  │───►│  TF State   │
+                   │   (9 svc)   │    │  Plan/Apply │    │  S3+DynamoDB│
+                   └─────────────┘    └─────────────┘    └─────────────┘
 ```
+> Local `infrastructure/local/podman-compose.yml` tanpa LocalStack; Cloud `Terraform` state `S3+ DynamoDB` + `Helm` + `ArgoCD` (parity PayU `infrastructure/foundation/`).
 
 ---
 
 ## Monitoring & Observability
 
-### Observability Stack
+### Observability Stack — MVP (Q26 Prometheus self-host)
+
+> **Q26**: Tetap `Prometheus + Grafana + Loki + Tempo` self-host di EKS (murah, parity PayU `LokiStack`), CloudWatch hanya billing. `AMP + Managed Grafana` baru di scale.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        OBSERVABILITY                             │
+│  OBSERVABILITY (EKS self-host)  + CloudWatch billing             │
 ├──────────────────┬──────────────────┬────────────────────────────┤
 │     METRICS      │      LOGS        │         TRACES             │
 ├──────────────────┼──────────────────┼────────────────────────────┤
-│                  │                  │                            │
 │  ┌────────────┐  │  ┌────────────┐  │  ┌────────────┐           │
-│  │ Prometheus │  │  │ Fluent Bit │  │  │   Jaeger   │           │
+│  │ Prometheus │  │  │ Fluent Bit │  │  │   Tempo    │           │
+│  │ (kube-prom)│  │  │  → Loki    │  │  │  (Jaeger)  │           │
 │  └─────┬──────┘  │  └─────┬──────┘  │  └─────┬──────┘           │
 │        │         │        │         │        │                   │
 │        ▼         │        ▼         │        ▼                   │
 │  ┌────────────┐  │  ┌────────────┐  │  ┌────────────┐           │
 │  │  Grafana   │  │  │   Loki     │  │  │   Tempo    │           │
-│  │ Dashboards │  │  │  (Storage) │  │  │  (Storage) │           │
+│  │  (EKS)     │  │  │   (EKS)    │  │  │   (EKS)    │           │
 │  └────────────┘  │  └────────────┘  │  └────────────┘           │
-│                  │                  │                            │
+│  CloudWatch ───────── metrics billing + alert SNS ────────────── │
 └──────────────────┴──────────────────┴────────────────────────────┘
 ```
 

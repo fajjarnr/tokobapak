@@ -1,0 +1,64 @@
+# TODOS — TokoBapak MVP
+
+> Single source of truth untuk eksekusi MVP. Setiap task mereferensikan ADR dan CONTEXT yang membeku di sesi grill 26 Aug 2026. Jangan coding tanpa ADR approve (Design-First Gate).
+
+## Sumber Kebijakan
+
+- `CONTEXT.md` — glossary: Product/Catalog/Inventory merge, Cart TTL 7 hari, Order state, Payment vs PayU Transaction, Shipment mock
+- `docs/adr/0001-mvp-scope-9-services.md` — scope 9 keep / 9 hide
+- `docs/adr/0002-go-1-27-uniform-mvp.md` — uniform Go 1.27 template chi/sqlc/pgx/kafka-go/go-redis/go-elasticsearch/golang-jwt
+- `docs/adr/0003-payu-snapbi-adapter-saga.md` — PayU SNAP-BI + Saga + idempotency
+- `docs/adr/0004-frontend-tanstack-start.md` — buang Next.js 15 → TanStack Start + Router + Query + BFF
+
+---
+
+## Fase 0 — Freeze & Cleanup (1–2 hari)
+
+- [ ] **T0.1** Validasi `CONTEXT.md` + 4 ADR oleh tim (ADR 0001–0004) — review bahasa `Payment` vs `Transaction` tidak rancu
+- [ ] **T0.2** Hide 9 service cut di `infrastructure/` & `docker-compose`: `review, chat, media, promotion, seller standalone, recommendation, analytics, catalog standalone, inventory standalone` → `enabled=false` (ref ADR 0001)
+- [ ] **T0.3** Hapus docs Next.js yang tidak relevan (ref ADR 0004): `frontend/web/README.md` Next.js boilerplate, `frontend/web/AGENTS.md` Next.js guidelines, section `docs/prd/frontend-prd.md §2.1` Framework Next.js 15 diganti TanStack Start (file ditandai superseded)
+- [x] **T0.5** Ganti Postgres 16 → 18 di `infrastructure/local/podman-compose.yml` (image `postgres:18-alpine`) + `RDS PostgreSQL 18 t4g.micro` (fallback `t4g.small` jika micro belum ada AZ) — test `SELECT version()` + `pg_upgrade` dry-run
+- [x] **T0.4** Update `docs/architecture/ARCHITECTURE.md` High-Level: Client `Web App (Next.js :3000)` → `Web App (TanStack Start + Vite :3000)` + catatan BFF JWT HttpOnly+CSRF (ref ADR 0004) — **DONE 26 Aug: infra local podman `m6a.4xlarge` tanpa LocalStack, cloud `EKS EC2 + RDS t4g.micro + ElastiCache t4g.micro + Kafka self-host 1 broker (Strimzi) hemat ~$70/bulan, ALB→Traefik (migrate→Kong), Terraform+Helm+ArgoCD, Prometheus self-host` (Q21–Q27) + `infrastructure/local/podman-compose.yml` ringkas 9 svc Go (9213 bytes) + legacy backup `podman-compose.yml.legacy-18svc`**
+
+## Fase 1 — Backend Go 1.27 Uniform 9 Service (2 minggu)
+
+- [ ] **T1.1** Scaffold template Go 1.27 hexagonal lightweight: `cmd/server/main.go`, `internal/domain/model + port` (interface), `internal/application/service`, `internal/adapter/{postgres,http,kafka,client/payu}`, `config`, `migrations` (ref ADR 0002 — tanpa outbox-starter/saga-starter)
+- [ ] **T1.1b** Outbox manual per service: tabel `outbox (id, topic, payload JSONB, created_at)` + poller `SELECT FOR UPDATE SKIP LOCKED` 5s → `kafka-go` publish `tokobapak.<domain>.<event>.v1` + DLQ `.dlq` (ref ADR 0002/0003 opsi b)
+- [ ] **T1.2** `product-service` merge `catalog+inventory` → tabel `products(stock)` + Flyway V1 (ref ADR 0001, CONTEXT Inventory)
+- [ ] **T1.3** `search-service` Go + `elastic/go-elasticsearch` v8 typed API 1 index `products` (ref ADR 0002, Q11)
+- [ ] **T1.4** `cart-service` Go + `redis/go-redis` `HSET cart:{userId}` TTL 7 hari + merge `sum` saat login (ref ADR 0003, Q12, CONTEXT Cart)
+- [ ] **T1.5** `auth-service` + `user-service` Go + `golang-jwt/jwt` BFF `accessToken` short + `refreshToken` HttpOnly, `users.role=SELLER` (ref ADR 0002, CONTEXT User/Seller)
+- [ ] **T1.6** `order-service` Go Saga orchestrator `PENDING→RESERVED→PAID→SHIPPED` + `SELECT FOR UPDATE` reserve (ref ADR 0003, Q13)
+- [ ] **T1.7** `payment-service` Go thin adapter PayU `transaction-service` SNAP-BI `X-Idempotency-Key`/`X-SIGNATURE` + tabel `payments(order_id UNIQUE, payu_reference UNIQUE, idempotency_key UNIQUE)` + `FOR UPDATE` callback (ref ADR 0003, Q14)
+- [ ] **T1.8** `shipping-service` Go mock flat ongkir + emit `tokobapak.shipment.created.v1` (ref ADR 0003, Q15, CONTEXT Shipment)
+- [ ] **T1.9** `notification-service` Go consumer `tokobapak.payment.completed.v1` → email/WA (ref ADR 0003, Q15, CONTEXT Notification)
+- [ ] **T1.10** Verifikasi: `go vet` + `golangci-lint` + unit test Saga + idempotency replay test (ref ADR 0003)
+
+## Fase 2 — Frontend TanStack Start Migration (2–3 minggu)
+
+- [ ] **T2.1** Init `frontend/web` TanStack Start + `tanstack/router` + `tanstack/query` Vite, hapus `next.config.ts`, `next-auth`, `next/image` (ref ADR 0004, Q18)
+- [ ] **T2.2** Migrasi routes `app/(shop)/` → `src/routes/` + BFF Token Relay server function (PayU CONTEXT BFF pattern, ref ADR 0004, Q19)
+- [ ] **T2.3** Data layer: `prefetchQuery` + `HydrationBoundary` + `staleTime 60s` listing/search vs `0` cart/checkout (ref ADR 0004, Q16b, vercel/commerce pattern)
+- [ ] **T2.4** Ganti `next/image` → `unpic`/`vite-imagetools` + hapus `next/font` (ref ADR 0004)
+- [ ] **T2.5** E2E Playwright: `vite dev` + `checkout.spec.ts` `Browse→Search→Cart→Checkout→Pay→Ship→Notify` (ref Fase 0 T0.4)
+
+## Fase 3 — Integrasi PayU & E2E (1 minggu)
+
+- [ ] **T3.1** Generate Go client OpenAPI PayU SNAP-BI `internal/client/payu` (jangan import `sdk/java`) (ref ADR 0003)
+- [ ] **T3.2** E2E `payu/transaction-service` sandbox: `InitiateTransfer` + `QRIS_PAYMENT` + HMAC + `X-Idempotency-Key` round-trip (ref ADR 0003)
+- [ ] **T3.3** Reconciliation job harian `payments` vs PayU ledger (ref PayU CONTEXT Ledger, ADR 0003)
+
+## Fase 4 — Validasi MVP 1 Bulan
+
+- [ ] **T4.1** Deploy 9 service Go + 1 frontend Start ke staging K8s, hide 9 cut tetap tidak deploy
+- [ ] **T4.2** Load test 10k produk ES + cart merge + saga oversell test
+- [ ] **T4.3** Keputusan: delete permanen 9 service cut atau rollback (ref ADR 0001)
+
+---
+
+## Definisi Done per Fase
+
+- Fase 0: `CONTEXT.md` + 4 ADR approved + CI hanya build 9 service
+- Fase 1: 9 service Go lulus `Idempotency` + `Saga compensate` test
+- Fase 2: `frontend/web` tidak ada `next` dependency, `bun run build` Vite sukses
+- Fase 3: Callback PayU idempoten diverifikasi 2x replay return 200 tanpa double posting

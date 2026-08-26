@@ -1,0 +1,5 @@
+# Payment via PayU SNAP-BI Adapter dengan Saga
+
+Konteks: MVP memilih PayU `transaction-service` sebagai sumber kebenaran dana. TokoBapak `payment-service` (Go) menjadi thin adapter yang forward `X-Idempotency-Key` + HMAC SNAP-BI (`X-SIGNATURE`, `X-TIMESTAMP`) ke PayU gateway-service, menyimpan `payments(order_id UNIQUE, payu_reference UNIQUE, idempotency_key UNIQUE, status)` dengan `SELECT FOR UPDATE` di callback. Checkout memakai Saga choreography: `OrderCreated → inventory reserve (FOR UPDATE) → PayU charge → shipment create`, kompensasi via `OrderCancelled`.
+
+Keputusan ini hard to reverse karena mengikat format `BigDecimal 19,4 HALF_EVEN`, ledger immutable PayU, CloudEvents `payu.transaction.*.v1`, dan topic Kafka `tokobapak.payment.completed.v1` → notification-service. Surprising karena PayU adalah platform Java Spring Boot 3.4 (20+ service) sementara TokoBapak MVP Go. Trade-off: tidak duplikasi ledger dan pakai standar perbankan vs ketergantungan ke PayU availability dan kompleksitas idempotency/webhook race; mitigasi dengan `UNIQUE(idempotency_key)` dan callback idempoten.
