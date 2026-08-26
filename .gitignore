@@ -104,3 +104,12 @@ docker-compose.override.yml
 test-results/
 playwright-report/
 blob-report/
+
+# ------------------------------------------------------------------------------
+# AGENT & DOCS (MVP 26 Aug 2026) — push semua, jangan ignore
+# ------------------------------------------------------------------------------
+!.agent/
+!AGENTS.md
+!CONTEXT.md
+!docs/adr/
+!docs/TODOS.md
