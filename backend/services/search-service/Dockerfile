@@ -1,30 +1,17 @@
-# Build stage
-FROM node:20-alpine AS builder
+# syntax=docker/dockerfile:1
+FROM docker.io/library/golang:1.27-alpine AS builder
 WORKDIR /app
-
-COPY package*.json ./
-RUN npm ci
-
+COPY go.mod go.sum* ./
+RUN go mod download
 COPY . .
-RUN npm run build
+RUN CGO_ENABLED=0 GOOS=linux go build -o /server ./cmd/server
 
-# Production stage
-FROM node:20-alpine
+FROM gcr.io/distroless/static-debian12:nonroot
 WORKDIR /app
-
-RUN addgroup -g 1001 -S appgroup && adduser -u 1001 -S appuser -G appgroup
-
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package*.json ./
-
-RUN chown -R appuser:appgroup /app
-USER appuser
-
-ENV PORT=3012
-EXPOSE 3012
-
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3012/health || exit 1
-
-CMD ["node", "dist/main"]
+COPY --from=builder /server /app/server
+COPY migrations ./migrations
+USER 1001:1001
+EXPOSE 8080
+EXPOSE 3010
+ENV PORT=3010
+ENTRYPOINT ["/app/server"]

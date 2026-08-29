@@ -22,8 +22,8 @@
 
 ## Fase 1 — Backend Go 1.27 Uniform 9 Service (2 minggu)
 
-- [ ] **T1.1** Scaffold template Go 1.27 hexagonal lightweight: `cmd/server/main.go`, `internal/domain/model + port` (interface), `internal/application/service`, `internal/adapter/{postgres,http,kafka,client/payu}`, `config`, `migrations` (ref ADR 0002 — tanpa outbox-starter/saga-starter)
-- [ ] **T1.1b** Outbox manual per service: tabel `outbox (id, topic, payload JSONB, created_at)` + poller `SELECT FOR UPDATE SKIP LOCKED` 5s → `kafka-go` publish `tokobapak.<domain>.<event>.v1` + DLQ `.dlq` (ref ADR 0002/0003 opsi b)
+- [x] **T1.1** Scaffold template Go 1.27 hexagonal lightweight: `cmd/server/main.go`, `internal/domain/model + port` (interface), `internal/application/service`, `internal/adapter/{postgres,http,kafka,client/payu}`, `config`, `migrations` — 9 svc `go vet`+`build` OK, Docker distroless 1001 8080 ✅ 29 Aug 2026
+- [x] **T1.1b** Outbox manual per service: tabel `outbox (id, topic, payload JSONB, created_at)` + poller `SELECT FOR UPDATE SKIP LOCKED` 5s → `kafka-go` publish `tokobapak.<domain>.<event>.v1` + DLQ `.dlq` — 5 svc poller + consumer ✅ 29 Aug 2026
 - [ ] **T1.2** `product-service` merge `catalog+inventory` → tabel `products(stock)` + Flyway V1 (ref ADR 0001, CONTEXT Inventory)
 - [ ] **T1.3** `search-service` Go + `elastic/go-elasticsearch` v8 typed API 1 index `products` (ref ADR 0002, Q11)
 - [ ] **T1.4** `cart-service` Go + `redis/go-redis` `HSET cart:{userId}` TTL 7 hari + merge `sum` saat login (ref ADR 0003, Q12, CONTEXT Cart)

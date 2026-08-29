@@ -1,44 +1,17 @@
-# Build stage
-FROM golang:1.22-alpine AS builder
-
+# syntax=docker/dockerfile:1
+FROM docker.io/library/golang:1.27-alpine AS builder
 WORKDIR /app
-
-# Install dependencies
-RUN apk add --no-cache git
-
-# Copy go mod files
-COPY go.mod go.sum ./
+COPY go.mod go.sum* ./
 RUN go mod download
-
-# Copy source code
 COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -o /server ./cmd/server
 
-# Build binary
-RUN go mod tidy
-RUN CGO_ENABLED=0 GOOS=linux go build -o /shipping-service ./cmd/server
-
-# Production stage
-FROM alpine:3.19
-
+FROM gcr.io/distroless/static-debian12:nonroot
 WORKDIR /app
-
-# Create non-root user
-RUN addgroup -g 1001 -S appgroup && \
-    adduser -u 1001 -S appuser -G appgroup
-
-# Copy binary
-COPY --from=builder /shipping-service .
+COPY --from=builder /server /app/server
 COPY migrations ./migrations
-
-# Change ownership
-RUN chown -R appuser:appgroup /app
-
-USER appuser
-
-ENV PORT=3008
+USER 1001:1001
+EXPOSE 8080
 EXPOSE 3008
-
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3008/health || exit 1
-
-ENTRYPOINT ["./shipping-service"]
+ENV PORT=3008
+ENTRYPOINT ["/app/server"]

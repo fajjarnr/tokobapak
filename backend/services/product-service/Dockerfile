@@ -1,40 +1,17 @@
-# Build stage
-FROM node:22-alpine AS builder
-
+# syntax=docker/dockerfile:1
+FROM docker.io/library/golang:1.27-alpine AS builder
 WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install dependencies
-RUN npm ci
-
-# Copy source code
+COPY go.mod go.sum* ./
+RUN go mod download
 COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -o /server ./cmd/server
 
-# Build the application
-RUN npm run build
-
-# Production stage
-FROM node:22-alpine AS production
-
+FROM gcr.io/distroless/static-debian12:nonroot
 WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install only production dependencies
-RUN npm ci --only=production
-
-# Copy built application
-COPY --from=builder /app/dist ./dist
-
-# Set environment variables
-ENV NODE_ENV=production
-ENV PORT=3001
-
-# Expose port
+COPY --from=builder /server /app/server
+COPY migrations ./migrations
+USER 1001:1001
+EXPOSE 8080
 EXPOSE 3001
-
-# Start the application
-CMD ["node", "dist/main"]
+ENV PORT=3001
+ENTRYPOINT ["/app/server"]
