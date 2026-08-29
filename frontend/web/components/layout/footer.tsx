@@ -1,11 +1,31 @@
 import Link from 'next/link'
 import { Facebook, Instagram, Twitter, Youtube, CreditCard, Wallet } from 'lucide-react'
 
-const footerLinks = {
-    'Tentang Kami': ['Tentang TokoBapak', 'Karir', 'Press', 'Program Afiliasi'],
-    'Layanan Pelanggan': ['Hubungi Kami', 'FAQ', 'Info Pengiriman', 'Pengembalian'],
-    'Link Cepat': ['New Arrivals', 'Best Sellers', 'Sale Items', 'Gift Cards'],
-    'Akun Saya': ['Pesanan Saya', 'Wishlist', 'Pengaturan Akun', 'Lacak Pesanan'],
+const footerLinks: Record<string, { label: string; href: string }[]> = {
+    'Tentang Kami': [
+      { label: 'Tentang TokoBapak', href: '/about' },
+      { label: 'Karir', href: '/careers' },
+      { label: 'Press', href: '/press' },
+      { label: 'Program Afiliasi', href: '/affiliate' },
+    ],
+    'Layanan Pelanggan': [
+      { label: 'Hubungi Kami', href: '/contact' },
+      { label: 'FAQ', href: '/faq' },
+      { label: 'Info Pengiriman', href: '/shipping-info' },
+      { label: 'Pengembalian', href: '/returns' },
+    ],
+    'Link Cepat': [
+      { label: 'New Arrivals', href: '/new-arrivals' },
+      { label: 'Best Sellers', href: '/best-sellers' },
+      { label: 'Sale Items', href: '/sale' },
+      { label: 'Gift Cards', href: '/gift-cards' },
+    ],
+    'Akun Saya': [
+      { label: 'Pesanan Saya', href: '/orders' },
+      { label: 'Wishlist', href: '/wishlist' },
+      { label: 'Pengaturan Akun', href: '/settings' },
+      { label: 'Lacak Pesanan', href: '/track-order' },
+    ],
 }
 
 export function Footer() {
@@ -58,12 +78,12 @@ export function Footer() {
                             <h4 className="font-semibold text-card mb-4">{title}</h4>
                             <ul className="space-y-2">
                                 {links.map((link) => (
-                                    <li key={link}>
+                                    <li key={link.href}>
                                         <a
-                                            href="#"
+                                            href={link.href}
                                             className="text-sm text-card/70 hover:text-primary transition-colors"
                                         >
-                                            {link}
+                                            {link.label}
                                         </a>
                                     </li>
                                 ))}

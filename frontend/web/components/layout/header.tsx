@@ -43,8 +43,8 @@ export function Header() {
                 <div className="container mx-auto px-4 flex items-center justify-between text-sm">
                     <p>Gratis Ongkir untuk Pesanan di Atas Rp500.000 | Same Day Delivery</p>
                     <div className="hidden md:flex items-center gap-4">
-                        <a href="#" className="hover:underline">Lacak Pesanan</a>
-                        <a href="#" className="hover:underline">Pusat Bantuan</a>
+                        <a href="/track-order" className="hover:underline">Lacak Pesanan</a>
+                        <a href="/help" className="hover:underline">Pusat Bantuan</a>
                     </div>
                 </div>
             </div>
