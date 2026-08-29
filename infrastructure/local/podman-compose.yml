@@ -1,6 +1,8 @@
 # TokoBapak MVP — Podman Compose (Local m6a.4xlarge, tanpa LocalStack)
 # 9 service Go 1.27 + 5 infra (postgres, redis, zookeeper, kafka 1 broker, elasticsearch)
 # Full AWS: EKS EC2 + RDS t4g.micro + ElastiCache t4g.micro + Kafka self-host 1 broker + ALB→Traefik (ADR 0001–0004)
+# HIDDEN 9 (ADR 0001: enabled=false) → review, chat, media, promotion, seller, recommendation, analytics, catalog standalone, inventory standalone
+# Legacy 18svc backup: podman-compose.yml.legacy-18svc (pre-MVP 26 Aug 2026, postgres:16-alpine). MVP compose = 9 svc Go only; hidden services require `profiles: ["hidden"]` or legacy file to enable.
 
 services:
   # ── Infra ──
