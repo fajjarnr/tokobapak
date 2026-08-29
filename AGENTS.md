@@ -1,281 +1,96 @@
-# GEMINI.md - TokoBapak E-commerce Platform
+# AGENTS.md — TokoBapak E-commerce Platform
 
-> AI Assistant Guidelines & Project Context for Gemini/Claude
+> Panduan singkat untuk AI Agent. Detail lengkap ada di `docs/` — file ini hanya berisi aturan yang **wajib dipatuhi** + pointer.
 
----
+## What is TokoBapak
 
-## 📋 Project Overview
+Marketplace multi-vendor (microservices, event-driven, hexagonal) untuk pasar Indonesia — customer, seller, admin. Stack: TypeScript (Next.js 15), Java (Spring Boot), Go, Python (FastAPI), PostgreSQL/Mongo, Redis, Kafka, Elasticsearch, K8s (EKS).
 
-**TokoBapak** adalah platform e-commerce multi-vendor modern yang dibangun dengan arsitektur microservices. Platform ini menyediakan pengalaman berbelanja online yang komprehensif untuk pasar Indonesia.
+## Commands
 
-### Quick Facts
+| Action | Command |
+| :----- | :------ |
+| Run web | `cd frontend/web && bun install && bun dev` |
+| Local infra | `cd infrastructure/local && podman compose up -d` |
+| Build Java | `mvn -f backend/services/<service>/pom.xml clean package -DskipTests -T 1C` |
+| Build NestJS | `npm --prefix backend/services/<service> run build` |
+| Build Go | `go run backend/services/<service>/cmd/server/main.go` |
+| All tests | `make test` atau `bun test && npx playwright test` |
+| Single service | `./scripts/test-single-service.sh <service>` (jika ada) |
+| Check services | `podman ps` / `kubectl get pods` |
 
-| Attribute | Value |
-|-----------|-------|
-| **Project Name** | TokoBapak |
-| **Type** | Multi-vendor E-commerce Marketplace |
-| **Architecture** | Microservices + Event-Driven |
-| **Primary Languages** | TypeScript, Java, Go, Python |
-| **Last Updated** | January 2026 |
+## Layout
 
----
+- `frontend/web` — Next.js 15 App Router (Bun 1.2+, Tailwind 4, shadcn/ui)
+- `backend/services/` — 18 microservices + `shared/` (Java/TS/Go/Python)
+- `infrastructure/` — K8s/Helm/Terraform, `local/podman-compose.yml` + `nginx/`
+- `docs/` — architecture, prd, adr, guides (BACA sebelum tugas arsitektural)
+- `.agent/skills/` — skills & workflows
 
-## 🏗️ Architecture Overview
+## 🚨 Non-Negotiable Rules
 
-### Frontend Applications
+1. **Money**: Harga pakai integer minor unit IDR atau `DECIMAL(12,2)`, NEVER `float`/`double`. Format via shared util, rounding `HALF_EVEN`.
+2. **No Oversell**: Stock decrement harus transactional / reservation event via `inventory-service`. Jangan update stock tanpa cek.
+3. **Idempotency**: Semua endpoint `checkout/payment/order/cart` wajib `X-Idempotency-Key`.
+4. **Event Publishing**: Publish via outbox pattern (bukan direct `kafkaTemplate.send()`). Topic `tokobapak.<domain>.<event>.v<n>`, DLQ suffix `.dlq`, format CloudEvents 1.0.
+5. **Hexagonal**: External comms (DB, Kafka, HTTP) wajib lewat Port. DTO di `interfaces/dto` sebelum logic.
+6. **API & Error**: Path versioned `/v1/...` plural kebab-case. Error RFC 9457 dengan code unik (`ORD_001`, `PAY_002`, `CRT_003`).
+7. **Frontend**: Maksimalkan Server Components; `"use client"` hanya leaf interaktif. shadcn/ui via `bunx shadcn@latest add [comp]`, Tailwind CSS-first, Zustand + TanStack Query, Forms RHF + Zod, Icons Lucide.
+8. **Container**: distroless/UBI9, non-root (UID 1001), drop ALL capabilities, read-only FS, port 8080.
+9. **Security**: Mask PII (NIK/telp) di log, encrypt di DB. No secrets di code/properties (pakai Vault/env). Validasi Zod di trust boundary.
+10. **TDD**: NO PROD CODE tanpa failing test dulu. Core domain (order/payment/cart) 80%+, lain 70%+. Test real behavior bukan mock. Frontend: React Testing Library (user behavior, bukan CSS/state).
+11. **Git & SemVer**: Conventional Commits `type(scope): msg`. No force-push ke protected. SemVer `MAJOR.MINOR.PATCH` (MAJOR=breaking API/DB/event). Image tag = git tag `vX.Y.Z`. CHANGELOG Keep a Changelog ISO 8601 `YYYY-MM-DD`, no duplicate version.
 
-| Application | Technology | Path | Status |
-|-------------|------------|------|--------|
-| **Web (Customer)** | Next.js 15, Tailwind CSS 4, shadcn/ui | `/frontend/web` | Active |
-| **Mobile** | React Native + Expo | `/frontend/mobile` | Planned |
-| **Admin Dashboard** | Next.js 15, Tailwind CSS 4 | `/frontend/admin` | Planned |
+## 🧠 AI Working Protocol & Debugging
 
-### Backend Services
+- **Design-First Gate**: Dilarang tulis code/scaffold fitur baru sebelum design plan disetujui user.
+- **Root Cause Reproduction**: Jangan langsung fix bug. Buat failing test yang reproduksi error konsisten dulu.
+- **Dev Loop**: Error Analysis → Minimal Fix → Local Test → Build → E2E Verify.
+- **Stop on Blockers**: Ambiguitas atau fix gagal >2x → STOP tanya user. Dilarang placeholder `TODO`/`TBD`.
+- **Evidence Before Claims**: Klaim "tests pass" wajib bukti output command. Dilarang "should work".
+- **Subagent Strategy**: Pakai subagent untuk riset/eksekusi paralel. Paralel HANYA jika file/service beda; share file → sekuensial. Review diff via subagent sebelum merge.
+- **Skills Usage**: Jika ada skill di `.agent/skills/` yang relevan → wajib baca & ikuti.
+- **No Performative Agreement**: Jangan basa-basi "You're absolutely right!". Langsung eksekusi teknikal.
+- **Simplicity First**: Kode minimum yang works. 200 baris bisa 50 → rewrite. Tanya: "senior bakal bilang overcomplicated?"
+- **Surgical Changes**: Hanya sentuh kode relevan. Match existing style (camelCase vars, PascalCase components, kebab-case files, `@/` alias, TS strict). Bersihkan unused import yang kamu buat, jangan hapus dead code pre-existing tanpa diminta. Tiap baris traceable ke request.
+- **Explicit Assumptions**: Nyatakan asumsi eksplisit. Multi-interpretation → sajikan semua opsi, jangan pilih diam-diam.
+- **Success Criteria Loop**: Ubah task jadi goal terverifikasi (`Add validation` → `Test invalid input → pass`). Tiap step punya verify-check.
 
-| Service | Technology | Purpose |
-|---------|------------|---------|
-| **user-service** | Java (Spring Boot) | User management & authentication |
-| **auth-service** | Java (Spring Boot) | JWT & OAuth authentication |
-| **product-service** | NestJS | Product catalog management |
-| **catalog-service** | Go | Categories, brands, attributes |
-| **inventory-service** | Go | Stock management |
-| **cart-service** | NestJS + Redis | Shopping cart operations |
-| **order-service** | Java (Spring Boot) | Order processing |
-| **payment-service** | Java (Spring Boot) | Payment gateway integration |
-| **shipping-service** | Go | Shipping & courier integration |
-| **notification-service** | NestJS + Bull Queue | Email, SMS, Push notifications |
-| **search-service** | NestJS + Elasticsearch | Full-text search |
-| **review-service** | Go | Product reviews & ratings |
-| **chat-service** | NestJS + Socket.io | Real-time messaging |
-| **recommendation-service** | Python (FastAPI) | ML-based recommendations |
-| **analytics-service** | Python (FastAPI) | Business analytics |
-| **promotion-service** | Java (Spring Boot) | Vouchers & promotions |
-| **seller-service** | NestJS | Seller management |
-| **media-service** | Go | Image/video processing |
+## 🤝 Collaboration Modes
 
-### Infrastructure
+- **Driver**: AI nulis kode. **Navigator**: AI rencana+review, user nulis. **TDD**: red-green-refactor. **Review**: audit saja tanpa nulis kode. **Mentor**: jelaskan konsep tanpa solusi langsung.
 
-| Component | Technology |
-|-----------|------------|
-| **Orchestration** | Kubernetes (EKS/EKS Anywhere) |
-| **API Gateway** | Kong / Nginx |
-| **Message Queue** | Apache Kafka, RabbitMQ |
-| **Cache** | Redis Cluster |
-| **Search Engine** | Elasticsearch |
-| **Database** | PostgreSQL, MongoDB |
-| **Object Storage** | SeaweedFS, Cloudflare R2, S3 |
-| **Monitoring** | Prometheus, Grafana, Jaeger, ELK |
-| **IaC** | Terraform, Helm |
+## MCP Tools — Gunakan Selalu
 
----
-
-## 📁 Project Structure
-
-```
-tokobapak/
-├── frontend/                    # Frontend Applications
-│   ├── web/                     # Next.js 15 Customer Web App
-│   ├── mobile/                  # React Native Mobile App
-│   └── admin/                   # Admin Dashboard
-│
-├── backend/                     # Backend Microservices
-│   ├── api-gateway/            # Kong/Nginx Gateway
-│   ├── services/               # All Microservices
-│   │   ├── user-service/       # Java - Spring Boot
-│   │   ├── auth-service/       # Java - Spring Boot
-│   │   ├── product-service/    # NestJS
-│   │   ├── catalog-service/    # Go
-│   │   ├── inventory-service/  # Go
-│   │   ├── cart-service/       # NestJS + Redis
-│   │   ├── order-service/      # Java
-│   │   ├── payment-service/    # Java
-│   │   ├── shipping-service/   # Go
-│   │   ├── notification-service/ # NestJS
-│   │   ├── search-service/     # NestJS + Elasticsearch
-│   │   ├── review-service/     # Go
-│   │   ├── chat-service/       # NestJS + Socket.io
-│   │   ├── recommendation-service/ # Python FastAPI
-│   │   ├── analytics-service/  # Python FastAPI
-│   │   ├── promotion-service/  # Java
-│   │   ├── seller-service/     # NestJS
-│   │   └── media-service/      # Go
-│   └── shared/                 # Shared Libraries & Schemas
-│
-├── infrastructure/             # Infrastructure as Code
-│   ├── kubernetes/            # K8s manifests
-│   ├── terraform/             # Terraform modules
-│   ├── helm/                  # Helm charts
-│   └── monitoring/            # Observability configs
-│
-├── database/                  # Database Migrations & Seeds
-├── message-queue/             # Kafka & RabbitMQ configs
-├── cache/                     # Redis configurations
-├── search/                    # Elasticsearch configs
-├── storage/                   # Object storage configs
-├── tests/                     # Integration & E2E tests
-├── scripts/                   # Automation scripts
-├── tools/                     # Development tools
-├── docs/                      # Documentation
-└── .github/                   # CI/CD Workflows
-```
-
----
-
-## 🛠️ Development Guidelines
-
-### Frontend (Web Application)
-
-**Technology Stack:**
-- **Runtime:** Bun 1.2+
-- **Framework:** Next.js 15 (App Router)
-- **Styling:** Tailwind CSS 4
-- **UI Components:** shadcn/ui (Radix primitives)
-- **State Management:** Zustand 5
-- **Data Fetching:** TanStack Query 5
-- **Forms:** React Hook Form + Zod
-- **Icons:** Lucide React
-
-**Commands:**
-```bash
-cd frontend/web
-bun install           # Install dependencies
-bun dev               # Start development server
-bun build             # Production build
-bun test              # Run tests
-bun lint              # Lint code
-```
-
-**Key Conventions:**
-- Gunakan App Router (bukan Pages Router)
-- Semua komponen di `components/` menggunakan shadcn/ui
-- State management menggunakan Zustand stores
-- Forms menggunakan React Hook Form dengan Zod validation
-- API calls menggunakan TanStack Query
-
-### Backend Services
-
-**Java Services (Spring Boot):**
-```bash
-cd backend/services/user-service
-./mvnw spring-boot:run    # Development
-./mvnw clean package      # Build
-```
-
-**Node.js Services (NestJS):**
-```bash
-cd backend/services/product-service
-npm install
-npm run start:dev         # Development
-npm run build             # Build
-```
-
-**Go Services:**
-```bash
-cd backend/services/catalog-service
-go mod download
-go run cmd/server/main.go  # Development
-go build -o bin/server cmd/server/main.go  # Build
-```
-
-**Python Services (FastAPI):**
-```bash
-cd backend/services/recommendation-service
-pip install -r requirements.txt
-uvicorn app.main:app --reload  # Development
-```
-
----
-
-## 📚 Context7 Integration
-
-Untuk mendapatkan dokumentasi terbaru, gunakan Context7 MCP untuk library berikut:
-
-### Recommended Libraries for Context7
+Punya akses Context7. Setiap tulis/edit/debug library pihak ketiga → resolve library ID via Context7 dulu, fetch docs relevan. Jangan asumsikan API dari memory training.
 
 | Library | Context7 ID | Use Case |
-|---------|-------------|----------|
-| **Next.js** | `/vercel/next.js` | App Router, SSR, ISR |
-| **Next.js Commerce** | `/vercel/commerce` | E-commerce patterns |
-| **React** | `/facebook/react` | React patterns |
-| **Tailwind CSS** | `/tailwindlabs/tailwindcss` | Styling utilities |
-| **TypeScript** | `/microsoft/typescript` | Type definitions |
-| **NestJS** | `/nestjs/nest` | Backend services |
-| **Spring Boot** | `/spring-projects/spring-boot` | Java services |
+| :------ | :---------- | :------- |
+| Next.js | `/vercel/next.js` | App Router, ISR |
+| React | `/facebook/react` | Patterns |
+| Tailwind | `/tailwindlabs/tailwindcss` | Styling |
+| TypeScript | `/microsoft/typescript` | Types |
+| NestJS | `/nestjs/nest` | Backend |
+| Spring Boot | `/spring-projects/spring-boot` | Java services |
 
-### How to Query
+## 🔄 Doc Routing (Jangan Campur Konten)
 
-```
-# Untuk Next.js e-commerce patterns
-Context7 Library: /vercel/next.js
-Query: "App Router e-commerce product page with ISR"
-
-# Untuk shadcn/ui components
-Context7 Library: /shadcn-ui/ui
-Query: "Dialog component with form validation"
-```
-
----
-
-## 🎯 AI Assistant Instructions
-
-### When Working on Frontend
-
-1. **Selalu gunakan App Router** - Jangan gunakan Pages Router
-2. **Komponen menggunakan shadcn/ui** - Install via `bunx shadcn@latest add [component]`
-3. **Styling dengan Tailwind CSS 4** - Gunakan CSS-first configuration
-4. **TypeScript strict mode** - Semua file harus typed
-5. **Use Server Components by default** - Client components hanya jika perlu interactivity
-
-### When Working on Backend
-
-1. **Follow Clean Architecture** - Hexagonal/Ports & Adapters pattern
-2. **Event-Driven Communication** - Gunakan Kafka untuk inter-service events
-3. **API Versioning** - Semua API harus versioned (`/v1/`, `/v2/`)
-4. **Database Migrations** - Gunakan Flyway (Java) atau native migrations
-
-### Code Style
-
-- **Naming:** camelCase untuk variables/functions, PascalCase untuk components/classes
-- **File naming:** kebab-case untuk files
-- **Imports:** Absolute imports menggunakan `@/` alias
-- **Error Handling:** Always handle errors properly dengan proper logging
-
-### Documentation Standards
-
-- Semua public API harus didokumentasikan dengan OpenAPI/Swagger
-- Setiap service harus memiliki README.md
-- Gunakan JSDoc/TSDoc untuk public functions
-- Maintain ADR (Architecture Decision Records) di `docs/architecture/ADR/`
-
-### Git & Changelog Policy ⚠️
-
-Setiap kali melakukan perubahan kode yang signifikan:
-1. **Update CHANGELOG.md**: Tambahkan entri di bawah `[Unreleased]` atau versi terbaru sesuai format Keep a Changelog.
-2. **Git Push**: Setelah selesai (atau dalam tahapan logis), lakukan `git add`, `git commit` dengan pesan deskriptif, dan `git push` ke remote repository. Jangan menunggu user meminta push kecuali sedang dalam sesi debugging intensif.
-
-
----
-
-## 🔗 Related Resources
-
-| Resource | Path |
-|----------|------|
-| Project Structure | `tokobapak_structure.txt` |
-| Frontend PRD | `frontend/prd.md` |
-| Backend PRD | `backend/prd.md` |
-| Architecture | `docs/architecture/ARCHITECTURE.md` |
-| API Docs | `docs/api/API_DOCUMENTATION.md` |
+| Konten | File |
+| :----- | :--- |
+| Bug/open items/todos | `docs/roadmap/TODOS.md` |
+| Deployment/milestones | `docs/roadmap/PROGRESS.md` |
+| Architecture decisions | `docs/adr/` + `docs/architecture/ARCHITECTURE.md` |
+| Infra deployment MOP | `infrastructure/README.md` |
 | Changelog | `CHANGELOG.md` |
-| Contributing | `CONTRIBUTING.md` |
+| Lessons & patterns | `docs/guides/LESSONS.md` |
 
----
+## 🛰️ Deep Reference (Baca Saat Relevan)
 
-## 📞 Support
+- Stack & architecture → `docs/architecture/ARCHITECTURE.md`
+- PRD & service status → `docs/prd/` + `backend/README.md`
+- Env & secrets → `docs/ENVIRONMENT_VARIABLES.md`
+- DB & schema → `docs/architecture/` + `backend/services/*/migrations/`
+- Frontend/Mobile/Python-ML & design system → `docs/guides/`
+- Skills & workflows → `.agent/skills/`
 
-- **Frontend Issues:** frontend-team@tokobapak.id
-- **Backend Issues:** backend-team@tokobapak.id
-- **Infrastructure:** devops-team@tokobapak.id
-
----
-
-*Last Updated: January 2026*
+*Last Updated: August 2026*

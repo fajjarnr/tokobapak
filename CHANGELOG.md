@@ -61,6 +61,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🔧 Changed
 
+#### Documentation - AGENTS.md Lean Refactor (PayU-inspired)
+- **Restruktur AGENTS.md 281→96 baris (-65%)** — adopsi pola PayU: `What is (1 baris) → Commands → Layout → Non-Negotiable Rules → AI Working Protocol → Doc Routing → Deep Reference`
+- **11 Non-Negotiable Rules** — Money (minor unit IDR/DECIMAL), No Oversell, Idempotency, Outbox Event, Hexagonal, API RFC9457, Frontend Server Components, Container, Security PII, TDD, Git SemVer/Conventional Commits
+- **AI Working Protocol 12 poin** — Design-First Gate, Root Cause Reproduction, Stop on Blockers >2x, Evidence Before Claims, Subagent Strategy, Simplicity First, Surgical Changes — ganti 5 bullet generik sebelumnya
+- **Doc Routing & Deep Reference** — cegah docs sprawl, detail arsitektur pindah ke `docs/architecture/` (single source of truth)
+
 #### Infrastructure
 - Updated podman-compose.yml with fully qualified Docker image names
 - Added NODE_ENV=development for NestJS services
