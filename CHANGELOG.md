@@ -24,8 +24,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Next.js 15 → TanStack Start**: delete `next 15`, `next-auth`, `eslint-config-next`, `next.config.ts`; add `vite`, `@vitejs/plugin-react`, `vite-tsconfig-paths`, `unpic`
 - **Infra**: `podman-compose.yml` 650→334 lines, `postgres:16→18-alpine`, `RDS t4g.micro`, `ElastiCache t4g.micro`, `Kafka 1 broker Strimzi` vs 3 broker, `ALB→Traefik`
 
-### Fixed
-- `golangci-lint` typecheck with Go 1.27, `confluentinc` short-name without `docker.io/` on podman 5.7, `unpic@0.14.1` not found -> `*`
+### Fixed (Validation 2026-08-29)
+- **Docs**: `podman-compose.yml.legacy-18svc` 650 lines + `docs/archive/frontend-prd-nextjs-LEGACY.md` 2360 lines deleted in `88bee7c` per user intent build from 0 TanStack MVP (ADR 0004) — not restored (T0.2/T0.3 archive deleted intentionally, fokus MVP 9 svc, no rollback). Compose header `MVP 9 svc Go only; legacy removed`.
+
+## [0.2.1] - 2026-08-29 — Validation
+
+See `docs/roadmap/VALIDATION_2026-08-29.md` (22456 bytes) — full E2E: `podman ps` 14 Up, `curl` health 200 localhost/host IP/public IP `18.143.199.84`, `SELECT version()` 18.6, `redis PONG`, `kafka green`, `vite build` 304k, `go vet` 9 svc 0, `go test` 7 PASS, `playwright` 7/11, `persist_test` before/after restart, `podman stats`, `podman logs`, `traefik` 404 (no routers). CRUD 404 (only `/health` implemented) — scaffold-complete not feature-complete, needs wiring `main.go` + handlers + BFF + Gateway + migrations auto-run.
+
 
 
 ## [Unreleased]

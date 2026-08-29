@@ -2,7 +2,7 @@
 # 9 service Go 1.27 + 4 infra (postgres, redis, kafka 4 KRaft, elasticsearch) — apache/kafka:4.0.0 KRaft no Zookeeper
 # Full AWS: EKS EC2 + RDS t4g.micro + ElastiCache t4g.micro + Kafka self-host 1 broker KRaft (apache/kafka:4) + ALB→Traefik (ADR 0001–0004)
 # HIDDEN 9 (ADR 0001: enabled=false) → review, chat, media, promotion, seller, recommendation, analytics, catalog standalone, inventory standalone
-# MVP 9 svc Go only; hidden 9 require `profiles: ["hidden"]` to enable (legacy 18svc removed 29 Aug 2026).
+# MVP 9 svc Go only; legacy 18svc removed 29 Aug 2026 per ADR 0001 build from 0 (no rollback file).
 
 services:
   # ── Infra ──

@@ -2,9 +2,9 @@
 
 > **Status: Superseded oleh `docs/adr/0004-frontend-tanstack-start.md` (26 Aug 2026)**
 >
-> Dokumen ini sebelumnya mendefinisikan stack **Next.js 15 App Router** untuk `frontend/web`, `frontend/mobile`, `frontend/admin-dashboard`. Sesuai ADR 0004, MVP memutuskan **buang Next.js total → TanStack Start + TanStack Router + TanStack Query (Vite) + BFF JWT**.
+> Dokumen ini sebelumnya mendefinisikan stack **Next.js 15 App Router** untuk `frontend/web`, `frontend/mobile`, `frontend/admin-dashboard`. Sesuai ADR 0004, MVP memutuskan **buang Next.js total → TanStack Start + TanStack Router + TanStack Query (Vite) + BFF JWT**. Build from 0 per ADR 0004.
 >
-> File lengkap versi Next.js diarsipkan di `docs/archive/frontend-prd-nextjs-LEGACY.md` untuk referensi.
+> Versi Next.js tidak diarsipkan (deleted 29 Aug 2026) — fokus TanStack Start MVP. Referensi Next.js hanya di git history jika diperlukan.
 >
 > **Referensi baru:**
 > - `docs/adr/0004-frontend-tanstack-start.md` — keputusan, trade-off, dan effort rewrite 2–3 minggu
