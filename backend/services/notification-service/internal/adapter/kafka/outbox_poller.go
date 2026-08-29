@@ -7,6 +7,9 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
+const TopicPaymentCompleted = "tokobapak.payment.completed.v1"
+
+
 type Consumer struct {
 	reader *kafka.Reader
 }
