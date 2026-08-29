@@ -65,7 +65,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Restruktur AGENTS.md 281→96 baris (-65%)** — adopsi pola PayU: `What is (1 baris) → Commands → Layout → Non-Negotiable Rules → AI Working Protocol → Doc Routing → Deep Reference`
 - **11 Non-Negotiable Rules** — Money (minor unit IDR/DECIMAL), No Oversell, Idempotency, Outbox Event, Hexagonal, API RFC9457, Frontend Server Components, Container, Security PII, TDD, Git SemVer/Conventional Commits
 - **AI Working Protocol 12 poin** — Design-First Gate, Root Cause Reproduction, Stop on Blockers >2x, Evidence Before Claims, Subagent Strategy, Simplicity First, Surgical Changes — ganti 5 bullet generik sebelumnya
-- **Align ke ADR 0001-0004 & ARCHITECTURE MVP**: What is → Go 1.27 uniform 9 keep/9 hide (ADR 0001/0002), TanStack Start target (ADR 0004, repo masih Next.js legacy `app/` → `src/routes/`), PayU BigDecimal 19,4 + outbox manual SKIP LOCKED 5s + Saga choreography (ADR 0003), hexagonal lightweight `internal/domain/port`, Doc Routing `CONTEXT.md`+`docs/adr/`+`roadmap/TODOS.md`, Deep Reference `SEQUENCE_DIAGRAMS.md` — fix mismatch 65% lean sebelumnya yang masih klaim polyglot/Next.js 15
+- **Align ke ADR 0001-0004 & ARCHITECTURE MVP**: fix mismatch polyglot/Next.js 15 → Go uniform TanStack Start (ADR 0001/0002/0004), PayU BigDecimal + outbox manual + Saga (ADR 0003), hexagonal lightweight, Doc Routing `CONTEXT.md`+`roadmap/TODOS.md`
+- **Lean high-level fix (feedback)**: Kembalikan AGENTS ke gambaran besar + aturan saja ala PayU (93 baris) — pindahkan detail spesifik ke `docs/adr/`+`docs/architecture/` biar ADR yang spesifik, AGENTS tetap pointer
 
 #### Infrastructure
 - Updated podman-compose.yml with fully qualified Docker image names
