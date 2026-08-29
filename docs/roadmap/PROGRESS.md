@@ -47,8 +47,7 @@ df83858 chore(phase0): T0.1-0.3 hidden 9 + legacy 18svc + archive
 
 ## Next
 
-- Staging K8s `EKS EC2 m6i.large` + `Terraform+Helm+ArgoCD` (pending)
-- k6 `10k produk ES` + `cart merge sum` login + Saga oversell `SELECT FOR UPDATE` with real `postgres:18`+`kafka:7.5.0`+`elasticsearch:8.17`
+- k6 `10k produk ES` + `cart merge sum` login + Saga oversell `SELECT FOR UPDATE` with real `postgres:18`+`apache/kafka:4.0.0 KRaft`+`elasticsearch:8.17`
 - Keputusan `T4.3` after 1mo: delete 9 cut permanen if Fase 1–3 PASS else rollback `podman-compose.yml.legacy-18svc`
 
 ## Done Definition

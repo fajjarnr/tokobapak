@@ -35,14 +35,13 @@ Template `cmd/server/main.go` + `internal/domain/model+port` + `internal/applica
 
 > Activate: `podman-compose -f podman-compose.yml.legacy-18svc up -d` or add `profiles: ["hidden"]` + `--profile hidden`.
 
-## Infra Local `podman-compose.yml` (5)
+## Infra Local `podman-compose.yml` (4) — apache/kafka:4.0.0 KRaft (no Zookeeper)
 
 | Infra | Image | Port | Health | Cloud |
 |-------|-------|------|--------|-------|
 | `postgres` | `docker.io/library/postgres:18-alpine` | `5432` | `pg_isready -U postgres` | `RDS t4g.micro` single-AZ |
 | `redis` | `docker.io/library/redis:alpine` | `6379` | `redis-cli ping` → `PONG` | `ElastiCache t4g.micro` |
-| `zookeeper` | `confluentinc/cp-zookeeper:7.5.0` | `2181` | | |
-| `kafka` | `confluentinc/cp-kafka:7.5.0` 1 broker `KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1` | `9092` `29092` | `kafka-broker-api-versions` | `self-host 1 broker Strimzi` → `MSK Serverless` |
+| `kafka` | `docker.io/apache/kafka:4.0.0` 1 broker KRaft `CLUSTER_ID 4L6g3nShT-eMCtK--X86sw` `KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1` | `9092` `29092` | `kafka-broker-api-versions` | `self-host 1 broker KRaft apache/kafka:4` → `MSK Serverless` |
 | `elasticsearch` | `docker.elastic.co/elasticsearch/elasticsearch:8.17.0` `single-node` `ES_JAVA_OPTS=-Xms512m` | `9200` | `curl /_cluster/health` `green|yellow` | |
 
 ## Event Topics (outbox manual)
@@ -58,8 +57,8 @@ Template `cmd/server/main.go` + `internal/domain/model+port` + `internal/applica
 
 ```sh
 podman-compose -f infrastructure/local/podman-compose.yml ps
-podman exec tokobapak_postgres psql -U postgres -c "SELECT version();"
-podman exec tokobapak_redis redis-cli ping
+podman exec tokobapak-postgres psql -U postgres -c "SELECT version();"
+podman exec tokobapak-redis redis-cli ping
 curl http://localhost:3001/health # product
 curl http://localhost:3003/health # cart
 curl http://localhost:3004/health # order

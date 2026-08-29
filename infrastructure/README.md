@@ -31,7 +31,7 @@ podman-compose down
 |---------|------|------------|-------------|--------|
 | PostgreSQL | 5432 | postgres:18-alpine | Primary DB (RDS t4g.micro di AWS) | infra |
 | Redis | 6379 | redis:alpine | Cache (ElastiCache t4g.micro) | infra |
-| Kafka + Zookeeper | 9092 | cp-kafka:7.5.0 1 broker | Event bus (self-host Strimzi) | infra |
+| Kafka (KRaft) | 9092 | apache/kafka:4.0.0 1 broker KRaft (no Zookeeper) | Event bus `CLUSTER_ID 4L6g3nShT-eMCtK--X86sw` | infra |
 | Elasticsearch | 9200 | elasticsearch:8.17.0 | Search index `products` | infra |
 | Auth Service | 3007 | Go 1.27 | JWT BFF | MVP keep |
 | User Service | 3006 | Go 1.27 | Users role SELLER | MVP keep |
@@ -43,12 +43,11 @@ podman-compose down
 | Search Service | 3010 | Go 1.27 + go-elasticsearch | Search | MVP keep |
 | Notification Service | 3009 | Go 1.27 | Kafka consumer | MVP keep |
 | Traefik | 8080 | traefik:v3.3 | ALB→Traefik (cloud) | MVP |
-
 ## Database Access
 
 ```bash
 # Connect to PostgreSQL
-podman exec -it tokobapak_postgres psql -U postgres
+podman exec -it tokobapak-postgres psql -U postgres
 
 # List databases
 \l
