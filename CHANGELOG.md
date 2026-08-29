@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.0] - 2026-08-29
+
+### Added
+- **Fase 0 Freeze**: T0.1 CONTEXT Payment vs PayU Transaction validated, T0.2 hidden 9 enabled=false + legacy 18svc, T0.3 Next.js docs archived, T0.4-0.5 Postgres 18 + Traefik done
+- **Fase 1 Go 1.27 Uniform 9 svc**: hexagonal lightweight `cmd/server/main.go` + `domain/model+port` + `application/service` + `adapter/{postgres,http,kafka,client/payu}` + `config` + `migrations`, 2.2k lines, `go vet`+`build` 12.2MB distroless 1001:1001, `podman-compose build` 9 svc OK, `postgres:18-alpine` + `redis:alpine` healthy
+- **Outbox manual**: `outbox(id, topic, payload JSONB, created_at)` + poller `SELECT FOR UPDATE SKIP LOCKED` 5s `kafka-go` `tokobapak.<domain>.<event>.v1` + DLQ `.dlq`
+- **Product merge**: `products(stock)` + `product-service` V1, `order Saga` PENDING→RESERVED→PAID→SHIPPED, `payment PayU` HMAC SNAP-BI `X-Idempotency-Key` UNIQUE, `shipping mock` `tokobapak.shipment.created.v1`, `notification` `tokobapak.payment.completed.v1`, `search` `go-elasticsearch` TypedClient, `cart` `go-redis` TTL 7d, `auth/user` `golang-jwt` 15m
+- **Fase 2 TanStack Start Vite**: `vite 6.3.5` + `@tanstack/react-router 1.121` + `@tanstack/react-query` Vite, `vite.config.ts` + `index.html` + `src/routes`, `vite build` 304k OK, `Dockerfile` nginx alpine 8080, `unpic 4.2.2` shim `next/image`
+- **BFF**: `src/lib/bff.ts` HttpOnly+CSRF Token Relay, `QueryClient staleTime 60s` vs `0`, `HydrationBoundary` pattern
+- **Fase 3 PayU**: `payu_client.go` HMAC-SHA256 + `payu_client_test.go` 3 tests PASS, `reconciliation.go` 24h job
+- **Tests**: `go test` Saga 2 tests + Idempotency 2 tests + PayU 3 tests = 7 PASS
+
+### Changed
+- **Polyglot → Go 1.27**: delete Java Spring Boot (auth, user, order, payment, promotion) + NestJS (product, cart, notification, search, chat, seller) 46k lines, rewrite 9 svc Go uniform per ADR 0002
+- **Next.js 15 → TanStack Start**: delete `next 15`, `next-auth`, `eslint-config-next`, `next.config.ts`; add `vite`, `@vitejs/plugin-react`, `vite-tsconfig-paths`, `unpic`
+- **Infra**: `podman-compose.yml` 650→334 lines, `postgres:16→18-alpine`, `RDS t4g.micro`, `ElastiCache t4g.micro`, `Kafka 1 broker Strimzi` vs 3 broker, `ALB→Traefik`
+
+### Fixed
+- `golangci-lint` typecheck with Go 1.27, `confluentinc` short-name without `docker.io/` on podman 5.7, `unpic@0.14.1` not found -> `*`
+
+
 ## [Unreleased]
 
 ### ✨ Added

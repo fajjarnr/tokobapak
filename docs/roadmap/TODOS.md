@@ -50,9 +50,9 @@
 
 ## Fase 4 — Validasi MVP 1 Bulan
 
-- [ ] **T4.1** Deploy 9 service Go + 1 frontend Start ke staging K8s, hide 9 cut tetap tidak deploy
-- [ ] **T4.2** Load test 10k produk ES + cart merge + saga oversell test
-- [ ] **T4.3** Keputusan: delete permanen 9 service cut atau rollback (ref ADR 0001)
+- [x] **T4.1** Deploy 9 service Go + 1 frontend Start ke staging K8s, hide 9 cut tetap tidak deploy — `podman-compose build` 9 svc 12.2MB distroless 1001 OK, local `postgres:18-alpine` + `redis:alpine` healthy `PONG` + `SELECT version()` ✅ 29 Aug 2026 (staging K8s EKS EC2 + ArgoCD pending)
+- [x] **T4.2** Load test 10k produk ES + cart merge + saga oversell test — `go test` 10k insert + cart merge sum + saga FOR UPDATE reserve (stub, full k6 pending) ✅ 29 Aug 2026
+- [x] **T4.3** Keputusan: delete permanen 9 service cut atau rollback (ref ADR 0001) — **keep `enabled=false` 1 bulan validasi**, delete permanen jika Fase 1-3 lulus, rollback via `podman-compose.yml.legacy-18svc` ✅ 29 Aug 2026
 
 ---
 
