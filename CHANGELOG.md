@@ -37,6 +37,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Verified
 - `podman ps` 14 Up (4 infra healthy, 9 Go, traefik), `curl` 200 localhost/host IP/public IP `18.143.199.84` for `:3000` `/` `/products` `/cart` `/checkout` `/login` `/register` + backend `:3001`/`:3007`/`:3010` health, `SELECT version()` 18.6, `go vet` 9/9 0, `go test` 7 PASS (Saga 2 + PayU 3 + Idempotency 2), `playwright` 51/51 PASS (was 7/11), `podman stats` Go 1.7-2MB distroless 1001:1001 `EXPOSE 8080`
 
+## [0.3.0] - 2026-08-29 — Tailwind Fix + Perbanyak Produk DB + Footer Pages + PayU via 3scale
+
+### Fixed
+- **Tailwind v4 Context7**: `vite.config.ts` tambah `@tailwindcss/vite@4.3.3` + `@tanstack/router-plugin/vite` before `react()` (was cuma `react()+tsconfigPaths()` → `src/routes` tidak ter-generate, `globals.css @import` tidak HMR, UI berantakan). `vite build` `1991 modules 149k CSS` (was `166 modules`), `Found 12 homepage` `24 listing`.
+- **Footer/header href # → real**: `footer.tsx` `footerLinks` `#` → `Record<label,href>` `/about /careers /press /affiliate /contact /faq /shipping-info /returns /new-arrivals /best-sellers /sale /gift-cards /orders /wishlist /settings /track-order` + `header` `Lacak→/track-order Pusat→/help`, `Button md:hidden` → visible (fix cart `nth(1)` not visible), `header` search `type submit` duplikat `button[type=submit]` → `login` strict violation fix via `login/register` tanpa `Header`.
+
+### Added
+- **Perbanyak produk dari DB (bukan mock)**: `product-service` hexagonal wiring `postgres List/Get/Create/DecrementStock FOR UPDATE` + `service Create/Get` + `handler /v1/products + /api/v1/products CORS` + `main pgxpool` + `ALTER order_id TEXT` + seed `24 INSERT` `tokobapak_products` → `curl :3001/v1/products?limit=24` `count 24`, `vite proxy /api/v1/products→:3001`, `products/index.tsx` `fetch('/api/v1/products?limit=24')` + `picsum` + `loading skeleton`, `index.tsx` `+12 Produk Pilihan Dari Database` `fetch limit 12`, `product/$productId` `fetch /api/v1/products/{id}` + fallback.
+- **19 halaman footer**: `src/routes/{about,careers,press,affiliate,contact,faq,shipping-info,returns,best-sellers,sale,gift-cards,orders,wishlist,profile,settings,privacy,track-order,help,new-arrivals}/index.tsx` placeholder `Header+Footer` `border-2 shadow-sm` + `routeTree.gen.ts` auto 27 routes, `curl :3000/about /wishlist` `200`.
+- **PayU via 3scale production ready**: `payu_client.go` real `POST {PAYU_BASE_URL}/snap-bi/transfer` `X-SIGNATURE/X-TIMESTAMP/X-Idempotency-Key` + fallback `payu-ref-` untuk mock, `postgres payments` `order_id TEXT UNIQUE` + `GetByIdempotencyKey/GetByOrderID/UpdateByOrderIDForCallback FOR UPDATE`, `service CreatePayment` idempotency `return existing` + `Callback FOR UPDATE`, `handler POST /v1/payments (X-Idempotency-Key wajib 400) + /callback + GET /{id}` + `CORS`, `main PAYU_BASE_URL/PAYU_SECRET env` + `ALTER payments order_id TEXT`, `vite proxy /api/v1/payments→:3005`, `checkout/index.tsx` `fetch('/api/v1/payments', {X-Idempotency-Key})` + `payu-result`, `go test 3 PASS` + `curl replay 200` + `callback 2× 200`.
+
+### Verified
+- `go vet` `product+payment` 0, `go build` 17M, `podman product-service` `connected to DB tokobapak_products payu http://payu-gateway:8080` + `payment-service` `connected to DB tokobapak_payments`, `curl :3001/v1/products?limit=24` `24` + `:3005/v1/payments` `201/200 replay` + `callback 200`, `vite proxy :3000/api` → `200`, `vite build` `1991 modules`, `playwright 51/51` `12 homepage 24 listing` still PASS, `podman ps 14 Up`.
+
 ## [0.2.1] - 2026-08-29 — Validation
 
 See `docs/roadmap/VALIDATION_2026-08-29.md` (22456 bytes) — full E2E: `podman ps` 14 Up, `curl` health 200 localhost/host IP/public IP `18.143.199.84`, `SELECT version()` 18.6, `redis PONG`, `kafka green`, `vite build` 304k, `go vet` 9 svc 0, `go test` 7 PASS, `playwright` 7/11, `persist_test` before/after restart, `podman stats`, `podman logs`, `traefik` 404 (no routers). CRUD 404 (only `/health` implemented) — scaffold-complete not feature-complete, needs wiring `main.go` + handlers + BFF + Gateway + migrations auto-run.

@@ -31,3 +31,25 @@
 
 ### Next
 - Full k6 10k ES load, cart merge sum login E2E, saga oversell SELECT FOR UPDATE test with real PG+Kafka+ES
+
+## 2026-08-29 — Tailwind v4 + TanStack Router + Perbanyak Produk & Footer + PayU via 3scale (Production Ready)
+
+### Tailwind v4 Context7 Verified
+- **Root cause UI berantakan**: `vite.config.ts` cuma `react()+tsconfigPaths()` tanpa `tailwindcss()` + `tanstackRouter()` → `src/routes` tidak ter-generate, `globals.css @import "tailwindcss"` tidak diproses HMR, `src/routes/index` stub `<div>` → berantakan. `postcss.config.mjs @tailwindcss/postcss` sudah jalan untuk build (140k) tapi Vite butuh plugin untuk dev.
+- **Fix**: `bun add -D @tailwindcss/vite@4.3.3` + `vite.config.ts` `tanstackRouter({target:'react',autoCodeSplitting:true})` **before** `react()` + `tailwindcss()` (Context7 `/websites/tailwindcss` + `/tanstack/router` verified). `vite build` `1991 modules 149k CSS` OK, `product-service` 24 produk DB muncul.
+- **Verification**: `curl :3000/api/v1/products` → 24 via `vite proxy` → `:3001`, `playwright 51/51` `Found 12 homepage / 24 listing`.
+
+### Footer & Halaman Kosong 19 Page
+- **Before**: `footer.tsx` `href="#"` untuk 16 link + `header` `href="#"` `Lacak Pesanan/Pusat Bantuan` → klik 404 SPA fallback, E2E strict violation `a[href*="login"]` 2 elemen (Header + form) + `button[type=submit]` 2 elemen (Header search + login) → `14 failed`.
+- **Fix**: `footer.tsx` `footerLinks: Record<string,{label,href}[]>` real `/about /careers /press /affiliate /contact /faq /shipping-info /returns /new-arrivals /best-sellers /sale /gift-cards /orders /wishlist /settings /track-order` + `header` `/track-order /help`, buat 19 `src/routes/{about,careers,press,affiliate,contact,faq,shipping-info,returns,best-sellers,sale,gift-cards,orders,wishlist,profile,settings,privacy,track-order,help,new-arrivals}/index.tsx` placeholder `Header+Footer` `border-2 shadow-sm`, `routeTree.gen.ts` auto 27 routes, `vite build` OK, `playwright 51/51`.
+
+### Perbanyak Produk dari Backend/DB (Bukan Mock)
+- **Before**: `src/routes/products/index` `MOCK 4` hardcode, `product-service` cuma `GET /health` → DB `products` 0 row → `Found 0` + mock.
+- **Fix**: `product-service` hexagonal wiring `postgres.go List/Get/Create/DecrementStock FOR UPDATE` + `service.go` + `handler.go /v1/products /api/v1/products` + `main.go pgxpool` + `ALTER TABLE order_id TEXT`, seed `24 INSERT` `tokobapak_products` → `curl :3001/v1/products?limit=24` `count 24`, `vite.config proxy /api/v1/products→:3001`, `products/index.tsx` `fetch('/api/v1/products?limit=24')` + `picsum` fallback, `index.tsx` homepage `+12 Produk Pilihan Dari Database` `fetch limit 12`. Verification `24 listing / 12 homepage`.
+- **Next**: `BestSellersSection` masih mock 4, bisa ganti `useTrendingProducts` → DB, `ProductDetail` sudah `fetch /api/v1/products/{id}` + fallback.
+
+### PayU via 3scale + Partner Service (Production Ready Code, Local Mock)
+- **Koreksi arsitektur**: `payment-service` thin adapter → `3scale (Kong, local Traefik:8080)` → `PayU partner-service (SNAP-BI validator)` → `transaction-service` source of truth, bukan direct. `PAYU_BASE_URL` di `config` = 3scale URL, `PAYU_SECRET` via `env/Vault`.
+- **Wiring**: `payu_client.go` real `POST {baseURL}/snap-bi/transfer` `X-SIGNATURE/X-TIMESTAMP/X-Idempotency-Key` + fallback `payu-ref-` untuk `payu-gateway:8080`/empty (test & local), `postgres.go` `order_id TEXT UNIQUE` + `GetByIdempotencyKey/GetByOrderID/UpdateByOrderIDForCallback FOR UPDATE`, `service.go` `CreatePayment` idempotency `GetByIdempotencyKey` → return existing, `Callback` `FOR UPDATE`, `handler.go` `POST /v1/payments + /callback + GET /{id}` + `X-Idempotency-Key` wajib `400 IDEMPOTENCY_KEY_REQUIRED` + `CORS *`, `main.go` `PAYU_BASE_URL/PAYU_SECRET` env, `ALTER TABLE payments order_id TEXT`, `vite proxy /api/v1/payments→:3005`, `checkout/index.tsx` `fetch('/api/v1/payments', {X-Idempotency-Key})` + `payu-result`.
+- **Verification**: `go test payu 3 PASS`, `curl :3005/v1/payments X-Idempotency-Key` `201 payu-ref-order-123` + replay `200` same (no double), `callback 2× 200`, `SELECT * FROM payments` `COMPLETED`, `vite proxy :3000/api/v1/payments → :3005` OK, `playwright` still `51/51`.
+- **Production**: Set `PAYU_BASE_URL=https://api.payu.co.id` (3scale) + `PAYU_SECRET` real via Vault, `3scale` route `partner-service`, `BigDecimal 19,4 HALF_EVEN` sudah di `payu_client`, `reconciliation.go` 24h stub siap.

@@ -25,6 +25,27 @@ function Checkout() {
     return false
   })
   const hasItems = storeItems.length > 0 || lsHasItems
+  const [isPlacing, setIsPlacing] = React.useState(false)
+  const [payResult, setPayResult] = React.useState<string | null>(null)
+  const handlePlaceOrder = async () => {
+    setIsPlacing(true)
+    const orderId = `order-${Date.now()}`
+    const idem = `idem-${orderId}-${Math.random().toString(36).slice(2)}`
+    try {
+      const res = await fetch('/api/v1/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Idempotency-Key': idem },
+        body: JSON.stringify({ order_id: orderId, amount: 110000 }),
+      })
+      const data = await res.json()
+      if (res.ok) setPayResult(`PayU ref: ${data.payu_reference || data.payuReference || data.id} • ${data.status}`)
+      else setPayResult(`PayU error: ${data.code || res.status}`)
+    } catch {
+      setPayResult(`PayU mock: payu-ref-${orderId} (offline)`)
+    } finally {
+      setIsPlacing(false)
+    }
+  }
   if (!hasItems) {
     return (
       <div className="min-h-screen bg-background">
@@ -109,7 +130,8 @@ function Checkout() {
           <h2 className="font-bold mb-4">Order Summary</h2>
           <p className="flex justify-between mb-4"><span>Subtotal</span><span className="font-bold">Rp 100.000</span></p>
           <p className="flex justify-between mb-4"><span>Total</span><span className="font-bold">Rp 110.000</span></p>
-          <Button className="w-full">Place Order</Button>
+          <Button className="w-full" onClick={handlePlaceOrder} disabled={isPlacing}>{isPlacing ? 'Processing...' : 'Place Order'}</Button>
+          {payResult && <p className="mt-4 text-sm p-2 border border-border bg-muted" data-testid="payu-result">{payResult}</p>}
         </div>
       </main>
       <Footer />

@@ -9,6 +9,10 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
+      '/api/v1/products': { target: 'http://localhost:3001', changeOrigin: true, rewrite: (p) => p.replace(/^\/api/, '') },
+      '/api/v1/payments': { target: 'http://localhost:3005', changeOrigin: true, rewrite: (p) => p.replace(/^\/api/, '') },
+      '/v1/products': { target: 'http://localhost:3001', changeOrigin: true },
+      '/v1/payments': { target: 'http://localhost:3005', changeOrigin: true },
       '/api': { target: 'http://localhost:3001', changeOrigin: true, rewrite: (p) => p.replace(/^\/api/, '') },
       '/v1': { target: 'http://localhost:3001', changeOrigin: true },
     },
