@@ -44,9 +44,9 @@
 
 ## Fase 3 — Integrasi PayU & E2E (1 minggu)
 
-- [ ] **T3.1** Generate Go client OpenAPI PayU SNAP-BI `internal/client/payu` (jangan import `sdk/java`) (ref ADR 0003)
-- [ ] **T3.2** E2E `payu/transaction-service` sandbox: `InitiateTransfer` + `QRIS_PAYMENT` + HMAC + `X-Idempotency-Key` round-trip (ref ADR 0003)
-- [ ] **T3.3** Reconciliation job harian `payments` vs PayU ledger (ref PayU CONTEXT Ledger, ADR 0003)
+- [x] **T3.1** Generate Go client OpenAPI PayU SNAP-BI `internal/client/payu` — `payu_client.go` HMAC SHA256 X-SIGNATURE/X-TIMESTAMP + X-Idempotency-Key, no sdk/java ✅ 29 Aug 2026
+- [x] **T3.2** E2E `payu/transaction-service` sandbox: `InitiateTransfer` + `QRIS_PAYMENT` + HMAC + `X-Idempotency-Key` round-trip — `payu_client_test.go` 3 tests PASS, idempotency replay 200 ✅ 29 Aug 2026
+- [x] **T3.3** Reconciliation job harian `payments` vs PayU ledger — `internal/job/reconciliation.go` 24h ticker vs PayU ledger ✅ 29 Aug 2026
 
 ## Fase 4 — Validasi MVP 1 Bulan
 
