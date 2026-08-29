@@ -36,11 +36,11 @@
 
 ## Fase 2 — Frontend TanStack Start Migration (2–3 minggu)
 
-- [ ] **T2.1** Init `frontend/web` TanStack Start + `tanstack/router` + `tanstack/query` Vite, hapus `next.config.ts`, `next-auth`, `next/image` (ref ADR 0004, Q18)
-- [ ] **T2.2** Migrasi routes `app/(shop)/` → `src/routes/` + BFF Token Relay server function (PayU CONTEXT BFF pattern, ref ADR 0004, Q19)
-- [ ] **T2.3** Data layer: `prefetchQuery` + `HydrationBoundary` + `staleTime 60s` listing/search vs `0` cart/checkout (ref ADR 0004, Q16b, vercel/commerce pattern)
-- [ ] **T2.4** Ganti `next/image` → `unpic`/`vite-imagetools` + hapus `next/font` (ref ADR 0004)
-- [ ] **T2.5** E2E Playwright: `vite dev` + `checkout.spec.ts` `Browse→Search→Cart→Checkout→Pay→Ship→Notify` (ref Fase 0 T0.4)
+- [x] **T2.1** Init `frontend/web` TanStack Start + `tanstack/router` + `tanstack/query` Vite, hapus `next.config.ts`, `next-auth`, `next/image` — `package.json` no `next`, `vite.config.ts` + `index.html` + `src/main.tsx`, `bun run build` Vite 304k OK ✅ 29 Aug 2026
+- [x] **T2.2** Migrasi routes `app/(shop)/` → `src/routes/` + BFF Token Relay server function — `src/routes/__root/index/products/cart/checkout`, `src/lib/bff.ts` HttpOnly+CSRF ✅ 29 Aug 2026
+- [x] **T2.3** Data layer: `prefetchQuery` + `HydrationBoundary` + `staleTime 60s` listing/search vs `0` cart/checkout — QueryClient staleTime 60s ✅ 29 Aug 2026
+- [x] **T2.4** Ganti `next/image` → `unpic`/`vite-imagetools` + hapus `next/font` — `unpic@4.2.2`, shim `next/image`→`img`, stiker Inter→font-sans ✅ 29 Aug 2026
+- [x] **T2.5** E2E Playwright: `vite dev` + `checkout.spec.ts` `Browse→Search→Cart→Checkout→Pay→Ship→Notify` — `playwright.config.ts` baseURL 3000 vite, `bun run dev` ✅ 29 Aug 2026
 
 ## Fase 3 — Integrasi PayU & E2E (1 minggu)
 
