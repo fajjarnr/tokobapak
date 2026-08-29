@@ -87,9 +87,10 @@ export function Header() {
 
                     {/* Actions */}
                     <div className="flex items-center gap-2 md:gap-4">
-                        <Button variant="ghost" size="icon" className="md:hidden">
+                        <Button variant="ghost" size="icon" className="">
                             <Search className="h-5 w-5" />
                         </Button>
+
 
                         {/* Wishlist */}
                         <Button variant="ghost" size="icon" className="relative" asChild>
