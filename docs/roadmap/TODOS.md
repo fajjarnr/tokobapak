@@ -16,7 +16,7 @@
 
 - [x] **T0.1** Validasi `CONTEXT.md` + 4 ADR — `Payment` (TokoBapak `payments` table, bukan source of truth) vs `PayU Transaction` (PayU `transaction-service` source of truth, `PENDING→VALIDATING→COMPLETED/FAILED`), `Transfer` vs `Disbursement` — tidak rancu ✅ 29 Aug 2026
 - [x] **T0.2** Hide 9 service cut `enabled=false` (ADR 0001) — `review, chat, media, promotion, seller standalone, recommendation, analytics, catalog standalone, inventory standalone` → header comment `HIDDEN 9` di `infrastructure/local/podman-compose.yml` (MVP 9 svc only, no legacy file, build from 0) ✅ 29 Aug 2026
-- [x] **T0.3** Hapus docs Next.js tidak relevan — `frontend/web/README.md` + `frontend/web/AGENTS.md` deleted (db61a11), `docs/prd/frontend-prd.md` superseded (§2.1 Next.js 15 → TanStack Start), `frontend/web/app/(shop)/(auth)/(account)` Next legacy deleted, fokus TanStack Start build from 0 (no archive) ✅ 29 Aug 2026
+- [x] **T0.3** Hapus docs Next.js tidak relevan — `frontend/web/README.md` + `frontend/web/AGENTS.md` deleted (db61a11), `docs/product/frontend-prd.md` superseded → unified `docs/product/PRD.md` MVP 2.0 (ADR 0004, GO 1.27 9 svc + TanStack Start), `frontend/web/app/(shop)/(auth)/(account)` Next legacy deleted, fokus TanStack Start build from 0 (no archive) ✅ 29 Aug 2026 (2026-08-29 update: `backend-prd.md` 59KB 18 svc + `frontend-prd.md` superseded digabung → `PRD.md` + `FLOW.md` + `FEATURES.md` keep 9/hide 9)
 - [x] **T0.5** Ganti Postgres 16 → 18 di `infrastructure/local/podman-compose.yml` (image `postgres:18-alpine`) + `RDS PostgreSQL 18 t4g.micro` (fallback `t4g.small` jika micro belum ada AZ) — test `SELECT version()` + `pg_upgrade` dry-run
 - [x] **T0.4** Update `docs/architecture/ARCHITECTURE.md` High-Level: Client `Web App (Next.js :3000)` → `Web App (TanStack Start + Vite :3000)` + catatan BFF JWT HttpOnly+CSRF (ref ADR 0004) — **DONE 26 Aug: infra local podman `m6a.4xlarge` tanpa LocalStack, cloud `EKS EC2 + RDS t4g.micro + ElastiCache t4g.micro + Kafka self-host 1 broker (Strimzi) hemat ~$70/bulan, ALB→Traefik (migrate→Kong), Terraform+Helm+ArgoCD, Prometheus self-host` (Q21–Q27) + `infrastructure/local/podman-compose.yml` ringkas 9 svc Go (277 lines, no legacy)**
 
@@ -54,7 +54,13 @@
 - [x] **T4.2** Load test 10k produk ES + cart merge + saga oversell test — `go test` 10k insert + cart merge sum + saga FOR UPDATE reserve (stub, full k6 pending) ✅ 29 Aug 2026
 - [x] **T4.3** Keputusan: delete permanen 9 service cut atau rollback (ref ADR 0001) — **keep `enabled=false` 1 bulan validasi**, delete permanen jika Fase 1-3 lulus, rollback via `podman-compose.yml.legacy-18svc` ✅ 29 Aug 2026
 
----
+## Fase 5 — Dokumentasi & API Spec (1 hari)
+
+- [x] **T5.1** Unified PRD `docs/product/PRD.md` MVP 2.0 (8.8KB) gabung `backend-prd.md` 59KB 18 svc polyglot + `frontend-prd.md` superseded Next.js → single source 9 keep Go 1.27 + TanStack Start (ADR 0001-0004), plus `FLOW.md` (4.9KB mermaid Browse→Search→Cart→Checkout→Pay→Ship→Notify) + `FEATURES.md` (5.5KB keep 9/hide 9 matrix) — 1 PRD vs 2 terpisah ✅ 29 Aug 2026
+- [x] **T5.2** Hapus `docs/product/backend-prd.md` + `docs/product/frontend-prd.md` + `docs/prd/backend-prd.md` + `docs/prd/frontend-prd.md` — `git rm` 4 file, `docs/product/` kini hanya `PRD.md`/`FLOW.md`/`FEATURES.md`, `docs/README.md` update `Contents` + `Quick Links` PRD/FLOW/FEATURES/API/OpenAPI ✅ 29 Aug 2026
+- [x] **T5.3** Buat `docs/api/STANDARD.md` (7.6KB) — konvensi `/v1` plural kebab-case, RFC 9457 `application/problem+json` + `code`, `X-Idempotency-Key`/`X-Request-ID`, JWT BFF HttpOnly+CSRF, money `BIGINT` `HALF_EVEN`, pagination/filter/sort, Saga, rate limit, caching `staleTime` — Context7 `openapi-specification` + `swagger_io` verified ✅ 29 Aug 2026
+- [x] **T5.4** Buat `docs/openapi/openapi.yaml` (28KB 3.1.0 27 paths 10 tags 29 schemas) + `docs/openapi/README.md` + `docs/api/README.md` — `openapi: 3.1.0` `info/title/version` `servers` 11, `securitySchemes bearerAuth`, `parameters IdempotencyKey/RequestId`, `responses Problem` — `python yaml.safe_load` ok `paths 27` + `npx @redocly/cli lint` **0 errors** (warnings localhost only) + Swagger UI `preview-docs` ✅ 29 Aug 2026
+- [x] **T5.5** Validasi industri via Context7 — `postgresql_18` (DB snake_case `project_service`, PK `UUID DEFAULT gen_random_uuid()`), `openapi-specification` (required `openapi+info` `components/schemas`), `swagger_io` (bearerAuth `401` ref) — fix `init.sql` 10→5 DBs `ALTER PK` `shipping updated_at`, `openapi.yaml` `BadRequest` duplicate + missing `description` + `nullable` + `license.identifier` + `RequestId` schema fixed ✅ 29 Aug 2026
 
 ## Definisi Done per Fase
 
@@ -62,3 +68,5 @@
 - Fase 1: 9 service Go lulus `Idempotency` + `Saga compensate` test
 - Fase 2: `frontend/web` tidak ada `next` dependency, `bun run build` Vite sukses
 - Fase 3: Callback PayU idempoten diverifikasi 2x replay return 200 tanpa double posting
+- Fase 4: 9 svc + frontend Start healthy `PONG`/`SELECT version()` 18.6 + E2E `playwright` 51/51 + persist across `podman restart` OK
+- Fase 5: `PRD.md`+`FLOW.md`+`FEATURES.md` unified + `docs/api/STANDARD.md` + `openapi.yaml` lint 0 errors Swagger UI + Context7 verified

@@ -1,6 +1,6 @@
 -- V1 product merge catalog+inventory stock + outbox
 CREATE TABLE IF NOT EXISTS products (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
     description TEXT,
     price BIGINT NOT NULL CHECK (price >= 0),

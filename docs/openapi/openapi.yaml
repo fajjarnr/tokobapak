@@ -1,0 +1,870 @@
+openapi: 3.1.0
+info:
+  title: TokoBapak MVP API
+  version: 2.0.0
+  description: |
+    Marketplace MVP Browse → Search → Cart → Checkout → Pay (PayU SNAP-BI) → Ship → Notify.
+    9 keep Go 1.27 uniform + TanStack Start. 9 hide enabled=false (ADR 0001).
+    Gateway Traefik :8080. Source: docs/product/PRD.md + docs/api/STANDARD.md + CONTEXT.md.
+    Money BIGINT minor unit HALF_EVEN, never float. Idempotency X-Idempotency-Key for POST /orders/payments.
+    Errors RFC 9457 application/problem+json with code.
+  contact:
+    name: TokoBapak Team
+    url: https://tokobapak.id
+  license:
+    name: Proprietary
+    identifier: proprietary
+servers:
+  - url: http://localhost:8080
+    description: Local Gateway (Traefik) — single entry
+  - url: http://localhost:3000
+    description: Frontend BFF (TanStack Start)
+  - url: http://localhost:3001
+    description: product-service direct (dev)
+  - url: http://localhost:3003
+    description: cart-service direct
+  - url: http://localhost:3004
+    description: order-service direct
+  - url: http://localhost:3005
+    description: payment-service direct
+  - url: http://localhost:3006
+    description: user-service direct
+  - url: http://localhost:3007
+    description: auth-service direct
+  - url: http://localhost:3008
+    description: shipping-service direct
+  - url: http://localhost:3009
+    description: notification-service direct
+  - url: http://localhost:3010
+    description: search-service direct
+tags:
+  - name: health
+    description: Liveness
+  - name: auth
+    description: JWT BFF HttpOnly+CSRF 15m (auth-service :3007)
+  - name: user
+    description: Users role SELLER (user-service :3006)
+  - name: product
+    description: Merge catalog+inventory stock (product-service :3001)
+  - name: search
+    description: ES 1 index products (search-service :3010)
+  - name: cart
+    description: Redis HSET TTL 7d merge sum (cart-service :3003)
+  - name: order
+    description: Saga PENDING→RESERVED→PAID→SHIPPED (order-service :3004)
+  - name: payment
+    description: PayU SNAP-BI adapter HMAC (payment-service :3005)
+  - name: shipping
+    description: Mock flat ongkir (shipping-service :3008)
+  - name: notification
+    description: Kafka consumer tokobapak.payment.completed.v1 (notification-service :3009)
+security:
+  - bearerAuth: []
+paths:
+  /health:
+    get:
+      tags: [health]
+      summary: Global gateway health (Traefik)
+      security: []
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Health' }
+  /v1/health:
+    get:
+      tags: [health]
+      summary: Service health
+      security: []
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Health' }
+  /v1/auth/login:
+    post:
+      tags: [auth]
+      summary: Login → JWT pair
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenPair' }
+          headers:
+            Set-Cookie:
+              description: refreshToken HttpOnly
+              schema: { type: string }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /v1/auth/register:
+    post:
+      tags: [auth]
+      summary: Register
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenPair' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /v1/auth/refresh:
+    post:
+      tags: [auth]
+      summary: Refresh accessToken via HttpOnly refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken: { type: string }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenPair' }
+  /v1/auth/logout:
+    post:
+      tags: [auth]
+      summary: Logout (invalidate)
+      responses:
+        '204': { description: no content }
+  /v1/users/me:
+    get:
+      tags: [user]
+      summary: Get current user
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+    put:
+      tags: [user]
+      summary: Update profile
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateUserRequest' }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+  /v1/users/{id}:
+    get:
+      tags: [user]
+      summary: Get user by id (seller)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /v1/products:
+    get:
+      tags: [product]
+      summary: List products (paginated, filters)
+      security: []
+      parameters:
+        - { name: page, in: query, schema: { type: integer, default: 1 } }
+        - { name: limit, in: query, schema: { type: integer, default: 20 } }
+        - { name: sort, in: query, schema: { type: string, enum: [price:asc, price:desc, created_at:desc] } }
+        - { name: category, in: query, schema: { type: string } }
+        - { name: minPrice, in: query, schema: { type: integer, description: BIGINT cents } }
+        - { name: maxPrice, in: query, schema: { type: integer } }
+        - { name: q, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductList' }
+    post:
+      tags: [product]
+      summary: Create product (SELLER)
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateProductRequest' }
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Product' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /v1/products/{id}:
+    get:
+      tags: [product]
+      summary: Get product detail
+      security: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Product' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [product]
+      summary: Update product (SELLER)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateProductRequest' }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Product' }
+    delete:
+      tags: [product]
+      summary: Delete product (SELLER)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '204': { description: no content }
+  /v1/search:
+    get:
+      tags: [search]
+      summary: Search products via ES
+      security: []
+      parameters:
+        - { name: q, in: query, schema: { type: string } }
+        - { name: category, in: query, schema: { type: string } }
+        - { name: minPrice, in: query, schema: { type: integer } }
+        - { name: maxPrice, in: query, schema: { type: integer } }
+        - { name: sort, in: query, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer } }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductList' }
+  /v1/search/suggestions:
+    get:
+      tags: [search]
+      summary: Autocomplete suggestions
+      security: []
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string, minLength: 2 } }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  suggestions: { type: array, items: { type: string } }
+  /v1/cart:
+    get:
+      tags: [cart]
+      summary: Get cart
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cart' }
+    delete:
+      tags: [cart]
+      summary: Clear cart
+      responses:
+        '204': { description: no content }
+  /v1/cart/items:
+    post:
+      tags: [cart]
+      summary: Add item to cart
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AddToCartRequest' }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cart' }
+  /v1/cart/items/{itemId}:
+    put:
+      tags: [cart]
+      summary: Update item qty
+      parameters:
+        - { name: itemId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [qty]
+              properties: { qty: { type: integer, minimum: 1 } }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cart' }
+    delete:
+      tags: [cart]
+      summary: Remove item
+      parameters:
+        - { name: itemId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cart' }
+  /v1/orders:
+    post:
+      tags: [order]
+      summary: Create order (Saga PENDING) — idempoten
+      parameters:
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+        - { $ref: '#/components/parameters/RequestId' }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateOrderRequest' }
+      responses:
+        '201':
+          description: created PENDING
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+          headers:
+            X-Idempotency-Key: { schema: { type: string } }
+        '200':
+          description: replay same key
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '409': { $ref: '#/components/responses/InsufficientStock' }
+    get:
+      tags: [order]
+      summary: List my orders
+      parameters:
+        - { name: page, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer } }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderList' }
+  /v1/orders/{id}:
+    get:
+      tags: [order]
+      summary: Get order detail
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /v1/orders/{id}/cancel:
+    post:
+      tags: [order]
+      summary: Cancel order (only PENDING/RESERVED)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+  /v1/payments:
+    post:
+      tags: [payment]
+      summary: Create payment (PayU SNAP-BI) — idempoten
+      parameters:
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreatePaymentRequest' }
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Payment' }
+        '200': { description: replay }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /v1/payments/{id}:
+    get:
+      tags: [payment]
+      summary: Get payment status
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Payment' }
+  /v1/payments/callback:
+    post:
+      tags: [payment]
+      summary: PayU callback (HMAC, FOR UPDATE idempoten)
+      security: []
+      parameters:
+        - { name: X-SIGNATURE, in: header, required: true, schema: { type: string, description: HMAC SHA256 64hex } }
+        - { name: X-TIMESTAMP, in: header, required: true, schema: { type: string, format: date-time } }
+        - { name: X-Idempotency-Key, in: header, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PayUCallbackRequest' }
+      responses:
+        '200': { description: ok idempoten 2× }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /v1/shipping/rates:
+    post:
+      tags: [shipping]
+      summary: Calculate flat ongkir (mock)
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ShippingRateRequest' }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ShippingRateResponse' }
+  /v1/shipping/orders:
+    post:
+      tags: [shipping]
+      summary: Create shipment
+      parameters:
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateShipmentRequest' }
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Shipment' }
+  /v1/shipping/orders/{id}:
+    get:
+      tags: [shipping]
+      summary: Get shipment
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Shipment' }
+  /v1/shipping/orders/{id}/track:
+    get:
+      tags: [shipping]
+      summary: Track shipment
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ShipmentTrack' }
+  /v1/notifications:
+    get:
+      tags: [notification]
+      summary: List notifications
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Notification' } }
+                  meta: { $ref: '#/components/schemas/Meta' }
+  /v1/notifications/{id}/read:
+    put:
+      tags: [notification]
+      summary: Mark as read
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Notification' }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "HS256 15m, via Authorization Bearer token (BFF HttpOnly)"
+  parameters:
+    IdempotencyKey:
+      name: X-Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, format: uuid, description: "replay 2x -> 200 same id" }
+    RequestId:
+      name: X-Request-ID
+      in: header
+      schema: { type: string, format: uuid }
+  responses:
+    Unauthorized:
+      description: unauthorized
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example: { type: https://tokobapak.id/errors/unauthorized, title: Unauthorized, status: 401, code: UNAUTHORIZED, detail: "missing JWT" }
+    Forbidden:
+      description: forbidden
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example: { type: https://tokobapak.id/errors/forbidden, title: Forbidden, status: 403, code: FORBIDDEN }
+    NotFound:
+      description: not found
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example: { type: https://tokobapak.id/errors/not-found, title: Not Found, status: 404, code: NOT_FOUND }
+    Conflict:
+      description: conflict
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example: { type: https://tokobapak.id/errors/conflict, title: Conflict, status: 409, code: CONFLICT }
+    InsufficientStock:
+      description: insufficient stock
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example: { type: https://tokobapak.id/errors/insufficient-stock, title: Insufficient Stock, status: 409, code: INSUFFICIENT_STOCK }
+    Unprocessable:
+      description: unprocessable (Saga)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    RateLimited:
+      description: rate limited
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example: { status: 429, code: RATE_LIMITED }
+    BadRequest:
+      description: bad request
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+  schemas:
+    Health:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [ok] }
+        service: { type: string }
+    Problem:
+      type: object
+      required: [title, status, code]
+      properties:
+        type: { type: string, format: uri, example: https://tokobapak.id/errors/insufficient-stock }
+        title: { type: string }
+        status: { type: integer }
+        code: { type: string, example: INSUFFICIENT_STOCK }
+        detail: { type: string }
+        instance: { type: string }
+        requestId: { type: string, format: uuid }
+    User:
+      type: object
+      required: [id, email, role]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        name: { type: string }
+        role: { type: string, enum: [CUSTOMER, SELLER, ADMIN] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    TokenPair:
+      type: object
+      required: [accessToken, refreshToken]
+      properties:
+        accessToken: { type: string, description: JWT 15m }
+        refreshToken: { type: string, description: HttpOnly 7d }
+        tokenType: { type: string, default: Bearer }
+        expiresIn: { type: integer, default: 900 }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
+    RegisterRequest:
+      type: object
+      required: [name, email, password]
+      properties:
+        name: { type: string }
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
+        confirmPassword: { type: string }
+    UpdateUserRequest:
+      type: object
+      properties:
+        name: { type: string }
+        phone: { type: string }
+        avatar: { type: string, format: uri }
+    Product:
+      type: object
+      required: [id, name, price, stock, sellerId]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string }
+        price: { type: integer, description: BIGINT cents, minimum: 0 }
+        stock: { type: integer, minimum: 0 }
+        sellerId: { type: string, format: uuid }
+        categoryId: { type: string, format: uuid }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    CreateProductRequest:
+      type: object
+      required: [name, price, stock]
+      properties:
+        name: { type: string }
+        description: { type: string }
+        price: { type: integer, minimum: 0 }
+        stock: { type: integer, minimum: 0 }
+        categoryId: { type: string, format: uuid }
+    UpdateProductRequest:
+      type: object
+      properties:
+        name: { type: string }
+        description: { type: string }
+        price: { type: integer }
+        stock: { type: integer }
+    ProductList:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/Product' } }
+        meta: { $ref: '#/components/schemas/Meta' }
+        links: { $ref: '#/components/schemas/Links' }
+    Meta:
+      type: object
+      properties:
+        page: { type: integer, default: 1 }
+        limit: { type: integer, default: 20 }
+        total: { type: integer }
+        totalPages: { type: integer }
+    Links:
+      type: object
+      properties:
+        self: { type: string }
+        next: { type: string }
+        prev: { type: string }
+    Cart:
+      type: object
+      required: [userId, items, updatedAt]
+      properties:
+        userId: { type: string, format: uuid }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/CartItem' }
+        totalPrice: { type: integer }
+        totalItems: { type: integer }
+        updatedAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time, description: TTL 7d }
+    CartItem:
+      type: object
+      required: [productId, qty, price]
+      properties:
+        productId: { type: string, format: uuid }
+        qty: { type: integer, minimum: 1 }
+        price: { type: integer }
+        name: { type: string }
+    AddToCartRequest:
+      type: object
+      required: [productId, qty]
+      properties:
+        productId: { type: string, format: uuid }
+        qty: { type: integer, minimum: 1 }
+    Order:
+      type: object
+      required: [id, userId, status, total]
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
+        status: { type: string, enum: [PENDING, RESERVED, PAID, SHIPPED, DELIVERED, CANCELLED] }
+        total: { type: integer }
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              productId: { type: string, format: uuid }
+              qty: { type: integer }
+              price: { type: integer }
+        shippingAddress:
+          type: object
+          properties:
+            address: { type: string }
+            city: { type: string }
+            postalCode: { type: string }
+            phone: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    CreateOrderRequest:
+      type: object
+      required: [items, shippingAddress, total]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required: [productId, qty]
+            properties:
+              productId: { type: string, format: uuid }
+              qty: { type: integer }
+              price: { type: integer }
+        shippingAddress: { $ref: '#/components/schemas/Address' }
+        total: { type: integer }
+        shippingMethod: { type: string, default: standard }
+        paymentMethod: { type: string }
+    OrderList:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/Order' } }
+        meta: { $ref: '#/components/schemas/Meta' }
+    Address:
+      type: object
+      required: [address, city, postalCode, phone]
+      properties:
+        address: { type: string }
+        city: { type: string }
+        postalCode: { type: string }
+        phone: { type: string }
+        firstName: { type: string }
+        lastName: { type: string }
+    Payment:
+      type: object
+      required: [id, orderId, status, amount]
+      properties:
+        id: { type: string, format: uuid }
+        orderId: { type: string, format: uuid }
+        payuReference: { type: string }
+        idempotencyKey: { type: string }
+        status: { type: string, enum: [PENDING, COMPLETED, FAILED] }
+        amount: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    CreatePaymentRequest:
+      type: object
+      required: [orderId, amount]
+      properties:
+        orderId: { type: string, format: uuid }
+        amount: { type: integer }
+        method: { type: string, enum: [qris, bank_transfer, ewallet] }
+    PayUCallbackRequest:
+      type: object
+      required: [payuReference, status]
+      properties:
+        payuReference: { type: string }
+        status: { type: string, enum: [COMPLETED, FAILED] }
+    Shipment:
+      type: object
+      required: [id, orderId, address, cost, status]
+      properties:
+        id: { type: string, format: uuid }
+        orderId: { type: string, format: uuid }
+        address: { type: string }
+        cost: { type: integer, minimum: 0 }
+        status: { type: string, enum: [PENDING, SHIPPED, DELIVERED] }
+        courierCode: { type: string }
+        trackingNumber: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    CreateShipmentRequest:
+      type: object
+      required: [orderId, address, cost]
+      properties:
+        orderId: { type: string, format: uuid }
+        address: { type: string }
+        cost: { type: integer }
+    ShippingRateRequest:
+      type: object
+      required: [origin, destination, weight]
+      properties:
+        origin: { $ref: '#/components/schemas/Address' }
+        destination: { $ref: '#/components/schemas/Address' }
+        weight: { type: number }
+    ShippingRateResponse:
+      type: object
+      properties:
+        courier: { type: string }
+        service: { type: string }
+        cost: { type: integer }
+        etd: { type: string, example: 1-2 days }
+    ShipmentTrack:
+      type: object
+      properties:
+        status: { type: string }
+        history:
+          type: array
+          items:
+            type: object
+            properties:
+              status: { type: string }
+              timestamp: { type: string, format: date-time }
+              location: { type: string }
+    Notification:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
+        channel: { type: string, enum: [email, wa, push] }
+        title: { type: string }
+        body: { type: string }
+        read: { type: boolean }
+        createdAt: { type: string, format: date-time }

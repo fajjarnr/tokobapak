@@ -99,6 +99,7 @@ services:
       - DB_PORT=5432
       - DB_USERNAME=postgres
       - DB_PASSWORD=postgres
+      - DB_NAME=tokobapak_users
       - JWT_SECRET=${JWT_SECRET:-tokobapak-dev-secret}
     depends_on:
       postgres:
@@ -110,14 +111,13 @@ services:
       dockerfile: Dockerfile
     container_name: tokobapak-user-service
     restart: always
-    ports:
-      - "3006:3006"
     environment:
       - PORT=3006
       - DB_HOST=postgres
       - DB_PORT=5432
       - DB_USERNAME=postgres
       - DB_PASSWORD=postgres
+      - DB_NAME=tokobapak_users
     depends_on:
       postgres:
         condition: service_healthy
@@ -172,6 +172,7 @@ services:
       - DB_PORT=5432
       - DB_USERNAME=postgres
       - DB_PASSWORD=postgres
+      - DB_NAME=tokobapak_orders
       - KAFKA_BROKERS=kafka:29092
     depends_on:
       postgres:
@@ -193,6 +194,7 @@ services:
       - DB_PORT=5432
       - DB_USERNAME=postgres
       - DB_PASSWORD=postgres
+      - DB_NAME=tokobapak_payments
       - KAFKA_BROKERS=kafka:29092
       - PAYU_BASE_URL=${PAYU_BASE_URL:-http://payu-gateway:8080}
       - PAYU_HMAC_SECRET=${PAYU_HMAC_SECRET:-dev-secret}
@@ -212,7 +214,11 @@ services:
       - "3008:3008"
     environment:
       - PORT=3008
-      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/tokobapak_shipping?sslmode=disable
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=tokobapak_shipping
       - KAFKA_BROKERS=kafka:29092
     depends_on:
       postgres:

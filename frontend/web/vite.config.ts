@@ -13,6 +13,7 @@ export default defineConfig({
       'next/image': path.resolve(__dirname, './src/shims/next-image.tsx'),
       'next/font/google': path.resolve(__dirname, './src/shims/next-font.ts'),
       'next-auth': path.resolve(__dirname, './src/shims/next-auth.ts'),
+      'next/link': path.resolve(__dirname, './src/shims/next-link.tsx'),
     },
   },
   build: { outDir: 'dist' },

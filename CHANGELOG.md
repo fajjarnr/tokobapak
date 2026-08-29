@@ -27,6 +27,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed (Validation 2026-08-29)
 - **Docs**: `podman-compose.yml.legacy-18svc` 650 lines + `docs/archive/frontend-prd-nextjs-LEGACY.md` 2360 lines deleted in `88bee7c` per user intent build from 0 TanStack MVP (ADR 0004) — not restored (T0.2/T0.3 archive deleted intentionally, fokus MVP 9 svc, no rollback). Compose header `MVP 9 svc Go only; legacy removed`.
 
+## [0.2.2] - 2026-08-29 — DB Naming Industry Audit + E2E 51/51
+
+### Fixed
+- **DB naming industry standard (Context7 PostgreSQL 18)**: `init.sql` MVP-only 5 DBs `tokobapak_{products,users,orders,payments,shipping}` lowercase snake_case (was 10 incl. hidden 5 `catalog,inventory,sellers,promotions,reviews` dropped per ADR 0001), `migrations` PK `id UUID DEFAULT gen_random_uuid()` consistent (was `products`+`orders` missing DEFAULT), `shipments` added `updated_at TIMESTAMPTZ` + `CHECK(cost>=0)` + `gen_random_uuid` (was duplicate `001_create_shipments.sql` VARCHAR/TIMESTAMP without TZ removed), `config.go` DB_NAME per-service `tokobapak_*` (was default `tokobapak` breaking Database-per-Service), `podman-compose.yml` `DB_NAME` per-service + `DATABASE_URL`→`DB_*` uniform, `DROP DATABASE` hidden 5, `ALTER TABLE` PK defaults live
+- **Frontend E2E 51/51**: `src/routeTree.gen.ts` `rootRoute` `Outlet` (was `div` outlet never renders), `HomeStub/CartStub/CheckoutStub/LoginStub/RegisterStub` minimal stubs with `data-testid` + `a[href]` single-match (strict mode), `vite.config.ts` alias `next/link` shim, `bun run build` 309k, `sanity` strict violation `h1,h2`→single `h1`+`p`
+- **Persistence**: `postgres` `INSERT` before/after `podman restart` verified 1→1, `redis` `SET EX 604800` TTL 7d verified, `kafka` `tokobapak.test.v1` `shouldDisplay` green/yellow, `ES` `products` index created `PUT /products/_doc/test-123` 201
+
+### Verified
+- `podman ps` 14 Up (4 infra healthy, 9 Go, traefik), `curl` 200 localhost/host IP/public IP `18.143.199.84` for `:3000` `/` `/products` `/cart` `/checkout` `/login` `/register` + backend `:3001`/`:3007`/`:3010` health, `SELECT version()` 18.6, `go vet` 9/9 0, `go test` 7 PASS (Saga 2 + PayU 3 + Idempotency 2), `playwright` 51/51 PASS (was 7/11), `podman stats` Go 1.7-2MB distroless 1001:1001 `EXPOSE 8080`
+
 ## [0.2.1] - 2026-08-29 — Validation
 
 See `docs/roadmap/VALIDATION_2026-08-29.md` (22456 bytes) — full E2E: `podman ps` 14 Up, `curl` health 200 localhost/host IP/public IP `18.143.199.84`, `SELECT version()` 18.6, `redis PONG`, `kafka green`, `vite build` 304k, `go vet` 9 svc 0, `go test` 7 PASS, `playwright` 7/11, `persist_test` before/after restart, `podman stats`, `podman logs`, `traefik` 404 (no routers). CRUD 404 (only `/health` implemented) — scaffold-complete not feature-complete, needs wiring `main.go` + handlers + BFF + Gateway + migrations auto-run.

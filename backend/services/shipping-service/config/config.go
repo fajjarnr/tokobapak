@@ -22,7 +22,7 @@ func Load() *Config {
 		DBPort:       getEnv("DB_PORT", "5432"),
 		DBUser:       getEnv("DB_USER", "postgres"),
 		DBPassword:   getEnv("DB_PASSWORD", "postgres"),
-		DBName:       getEnv("DB_NAME", "tokobapak"),
+		DBName:       getEnv("DB_NAME", "tokobapak_shipping"),
 		RedisHost:    getEnv("REDIS_HOST", "redis"),
 		RedisPort:    getEnv("REDIS_PORT", "6379"),
 		KafkaBrokers: getEnv("KAFKA_BROKERS", "kafka:29092"),
