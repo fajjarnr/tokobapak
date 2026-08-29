@@ -61,13 +61,6 @@ Marketplace multi-vendor (microservices, event-driven, hexagonal) untuk pasar In
 
 Setiap tulis/edit/debug library → resolve via Context7 dulu, jangan asumsikan dari memory.
 
-| Library | Context7 ID | Use Case |
-| :------ | :---------- | :------- |
-| TanStack Start | `/tanstack/start` | Frontend |
-| Go | `/golang/go` | Backend |
-| Tailwind | `/tailwindlabs/tailwindcss` | Styling |
-| TypeScript | `/microsoft/typescript` | Types |
-
 ## 🔄 Doc Routing (Jangan Campur Konten)
 
 | Konten | File |
@@ -89,5 +82,3 @@ Setiap tulis/edit/debug library → resolve via Context7 dulu, jangan asumsikan 
 - Env & service configs → `docs/ENVIRONMENT_VARIABLES.md`
 - DB & migrations → `backend/services/<svc>/migrations/`
 - Skills & workflows → `.agent/skills/`
-
-*Last Updated: August 2026*
