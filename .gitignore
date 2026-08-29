@@ -68,8 +68,8 @@ target/
 *.prof
 vendor/
 # Compiled binaries
-**/catalog-service/server
 **/cmd/**/server
+
 
 # ------------------------------------------------------------------------------
 # PYTHON
@@ -98,7 +98,10 @@ pip-log.txt
 # Docker
 docker-compose.override.yml
 
-# ------------------------------------------------------------------------------
+# Tool caches (local only)
+.codegraph/
+graphify-out/
+
 # TESTING & TOOLS
 # ------------------------------------------------------------------------------
 test-results/

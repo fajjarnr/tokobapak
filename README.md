@@ -122,20 +122,17 @@ tokobapak/
 │   ├── mobile/                  # 📱 React Native Mobile App
 │   └── admin/                   # 📊 Admin Dashboard
 │
-├── backend/                     # Backend Microservices
-│   ├── api-gateway/            # Kong/Nginx Gateway
-│   └── services/               # All Microservices
-│       ├── user-service/       # Java (Spring Boot)
-│       ├── auth-service/       # Java (Spring Boot)
-│       ├── product-service/    # NestJS
-│       ├── catalog-service/    # Go
-│       ├── order-service/      # Java (Spring Boot)
-│       ├── payment-service/    # Java (Spring Boot)
-│       ├── shipping-service/   # Go
-│       ├── notification-service/ # NestJS
-│       ├── search-service/     # NestJS + Elasticsearch
-│       ├── chat-service/       # NestJS + Socket.io
-│       └── ...more
+├── backend/                     # Backend Microservices (MVP 9 Go 1.27)
+│   └── services/               # 9 MVP services per ADR 0001
+│       ├── auth-service/       # Go 1.27 chi jwt (3007)
+│       ├── user-service/       # Go 1.27 chi pgx (3006)
+│       ├── product-service/    # Go 1.27 chi pgx stock (3001)
+│       ├── cart-service/       # Go 1.27 chi go-redis (3003)
+│       ├── order-service/      # Go 1.27 Saga (3004)
+│       ├── payment-service/    # Go 1.27 PayU SNAP-BI (3005)
+│       ├── shipping-service/   # Go 1.27 mock (3008)
+│       ├── search-service/     # Go 1.27 go-elasticsearch (3010)
+│       └── notification-service/ # Go 1.27 kafka (3009)
 │
 ├── infrastructure/             # Infrastructure as Code
 │   ├── kubernetes/            # K8s manifests
@@ -153,43 +150,34 @@ tokobapak/
 
 ## 💻 Technology Stack
 
-### Frontend
+### Frontend — TanStack Start + Vite (ADR 0004)
 
 | Technology | Purpose |
 |------------|---------|
-| **Next.js 15** | React framework dengan App Router |
-| **TypeScript** | Type-safe JavaScript |
-| **Tailwind CSS 4** | Utility-first CSS |
-| **shadcn/ui** | Radix-based UI components |
-| **Zustand** | Lightweight state management |
-| **TanStack Query** | Server state & data fetching |
-| **React Hook Form** | Form handling |
-| **Zod** | Schema validation |
+| **TanStack Start + Vite 6** `TanStack Router` `TanStack Query` | SSR + file-based routing `src/routes` |
+| **TypeScript 5** | Type-safe |
+| **Tailwind CSS 4** `shadcn/ui` | UI |
+| **Bun 1.2** | Runtime + package manager |
+| **BFF** `src/lib/bff.ts` | HttpOnly + CSRF relay |
 
-### Backend
+### Backend — MVP 9 Go 1.27 uniform (ADR 0001/0002)
 
 | Technology | Purpose |
 |------------|---------|
-| **Java (Spring Boot)** | Core business services |
-| **NestJS** | Node.js microservices |
-| **Go** | High-performance services |
-| **Python (FastAPI)** | ML & Analytics services |
-| **Kafka** | Event streaming |
-| **Redis** | Caching & session |
-| **PostgreSQL** | Primary database |
-| **Elasticsearch** | Search engine |
+| **Go 1.27** `chi` `pgx` `kafka-go` | 9 services uniform hexagonal |
+| **PostgreSQL 18** `pgx` | `users, products(stock), orders, payments, shipments` + outbox |
+| **Redis** `go-redis` | `cart` HSET TTL 7d |
+| **Elasticsearch 8.17** `go-elasticsearch` TypedClient | `search` 1 index `products` |
+| **Kafka 4 KRaft** `apache/kafka:4.0.0` | outbox `tokobapak.<domain>.<event>.v1` + `.dlq` |
 
-### Infrastructure
+### Infrastructure — podman m6a.4xlarge local → EKS EC2 + RDS + ElastiCache + Kafka
 
 | Technology | Purpose |
 |------------|---------|
-| **Kubernetes** | Container orchestration |
-| **Terraform** | Infrastructure as Code |
-| **Helm** | K8s package manager |
-| **Kong/Nginx** | API Gateway |
-| **Prometheus** | Metrics collection |
-| **Grafana** | Metrics visualization |
-| **Jaeger** | Distributed tracing |
+| **Podman Compose** `postgres:18` `redis:alpine` `apache/kafka:4.0.0` `elasticsearch:8.17` | local 4 infra + 9 services |
+| **Traefik v3.3** | local gateway `:8080` (sim ALB→Traefik) |
+| **Kubernetes + Helm + Terraform** | EKS EC2 + RDS t4g.micro + ElastiCache t4g.micro + Kafka self-host |
+| **Prometheus + Grafana** | Metrics |
 | **ELK Stack** | Centralized logging |
 
 ---

@@ -1,6 +1,6 @@
 # SERVICES — TokoBapak MVP
 
-> Catalog 9 keep + 9 hide per `docs/adr/0001-mvp-scope-9-services.md`. Infra `podman m6a.4xlarge` → `EKS EC2 + RDS t4g.micro + ElastiCache t4g.micro + Kafka 1 broker`.
+> MVP 9 services per `docs/adr/0001-mvp-scope-9-services.md` — 9 hidden deleted 29 Aug 2026 (`catalog, inventory, seller, review, chat, media, promotion, recommendation, analytics`). Infra `podman m6a.4xlarge` → `EKS EC2 + RDS t4g.micro + ElastiCache t4g.micro + Kafka 1 broker`.
 
 ## MVP Keep 9 — Go 1.27 uniform hexagonal
 
@@ -19,21 +19,10 @@ Template `cmd/server/main.go` + `internal/domain/model+port` + `internal/applica
 | **notification-service** | `3009` | Go 1.27 `chi` `kafka-go` | Kafka consumer (no DB) | `GET /health` | consume `tokobapak.payment.completed.v1` → email/WA | `outbox` stub |
 | **frontend/web** | `3000` `8080` | TanStack Start + TanStack Router + TanStack Query + Vite | — | `GET /` | BFF `src/lib/bff.ts` HttpOnly+CSRF | `vite build` `dist/` `nginx:alpine` |
 
-## Hide 9 — `enabled=false` (ADR 0001) `podman-compose.yml.legacy-18svc`
+## Hidden 9 — DELETED 29 Aug 2026 (ADR 0001)
 
-| Service | Orig Tech | Hide Reason | Legacy |
-|---------|-----------|-------------|--------|
-| `catalog-service` | Go 1.22 `chi` | merge → `product-service` | `localhost/local_catalog-service` (old) |
-| `inventory-service` | Go 1.22 `pgx` | merge → `products.stock` `SELECT FOR UPDATE` | `localhost/local_inventory-service` |
-| `seller-service` | NestJS | merge → `users.role=SELLER` `products.seller_id` | |
-| `review-service` | Go 1.22 | trust feature cut | |
-| `chat-service` | NestJS `socket.io` | engagement cut | `3013` |
-| `media-service` | Go 1.22 | langsung R2 | `3015` |
-| `promotion-service` | Java Spring | monetisasi cut | `3018` |
-| `recommendation-service` | Python FastAPI | ML cut | `3014` |
-| `analytics-service` | Python FastAPI | analytics cut | `3017` |
+> 9 hidden services deleted permanen `5f58259` + `07f2b38` — rebuild MVP from 0. Merge: `catalog→product`, `inventory→products.stock`, `seller→users.role`. Cut: `review, chat, media, promotion, recommendation, analytics`.
 
-> Activate: `podman-compose -f podman-compose.yml.legacy-18svc up -d` or add `profiles: ["hidden"]` + `--profile hidden`.
 
 ## Infra Local `podman-compose.yml` (4) — apache/kafka:4.0.0 KRaft (no Zookeeper)
 
@@ -41,7 +30,7 @@ Template `cmd/server/main.go` + `internal/domain/model+port` + `internal/applica
 |-------|-------|------|--------|-------|
 | `postgres` | `docker.io/library/postgres:18-alpine` | `5432` | `pg_isready -U postgres` | `RDS t4g.micro` single-AZ |
 | `redis` | `docker.io/library/redis:alpine` | `6379` | `redis-cli ping` → `PONG` | `ElastiCache t4g.micro` |
-| `kafka` | `docker.io/apache/kafka:4.0.0` 1 broker KRaft `CLUSTER_ID 4L6g3nShT-eMCtK--X86sw` `KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1` | `9092` `29092` | `kafka-broker-api-versions` | `self-host 1 broker KRaft apache/kafka:4` → `MSK Serverless` |
+| `kafka` | `docker.io/apache/kafka:4.0.0` 1 broker KRaft `CLUSTER_ID 4L6g3nShT-eMCtK--X86sw` `KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1` | `9092` `29092` | `/opt/kafka/bin/kafka-broker-api-versions.sh` | `self-host 1 broker KRaft apache/kafka:4` → `MSK Serverless` |
 | `elasticsearch` | `docker.elastic.co/elasticsearch/elasticsearch:8.17.0` `single-node` `ES_JAVA_OPTS=-Xms512m` | `9200` | `curl /_cluster/health` `green|yellow` | |
 
 ## Event Topics (outbox manual)
