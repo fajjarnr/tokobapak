@@ -29,6 +29,9 @@ func (s *Service) Create(ctx context.Context, p *model.Product) error {
 	if p.Price < 0 {
 		return model.ErrBadRequest
 	}
+	if p.Stock < 0 {
+		return model.ErrBadRequest
+	}
 	return s.repo.Create(ctx, p)
 }
 

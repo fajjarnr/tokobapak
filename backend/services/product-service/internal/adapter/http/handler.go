@@ -104,16 +104,22 @@ func handleGet(svc *service.Service) http.HandlerFunc {
 func handleCreate(svc *service.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if svc == nil {
-			http.Error(w, `{"code":"SERVICE_UNAVAILABLE"}`, http.StatusServiceUnavailable)
+			w.Header().Set("Content-Type", "application/problem+json")
+			w.WriteHeader(http.StatusServiceUnavailable)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"type": "about:blank", "title": "Service Unavailable", "status": 503, "code": "SERVICE_UNAVAILABLE"})
 			return
 		}
 		var p model.Product
 		if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
-			http.Error(w, `{"code":"BAD_REQUEST"}`, http.StatusBadRequest)
+			w.Header().Set("Content-Type", "application/problem+json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"type": "about:blank", "title": "Bad Request", "status": 400, "code": "BAD_REQUEST"})
 			return
 		}
 		if err := svc.Create(r.Context(), &p); err != nil {
-			http.Error(w, `{"code":"BAD_REQUEST"}`, http.StatusBadRequest)
+			w.Header().Set("Content-Type", "application/problem+json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"type": "about:blank", "title": "Bad Request", "status": 400, "code": "BAD_REQUEST"})
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")

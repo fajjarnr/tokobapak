@@ -51,9 +51,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Verified
 - `go vet` `product+payment` 0, `go build` 17M, `podman product-service` `connected to DB tokobapak_products payu http://payu-gateway:8080` + `payment-service` `connected to DB tokobapak_payments`, `curl :3001/v1/products?limit=24` `24` + `:3005/v1/payments` `201/200 replay` + `callback 200`, `vite proxy :3000/api` → `200`, `vite build` `1991 modules`, `playwright 51/51` `12 homepage 24 listing` still PASS, `podman ps 14 Up`.
 
-## [0.2.1] - 2026-08-29 — Validation
+## [0.3.1] - 2026-08-30 — T6.1 product validation
 
-See `docs/roadmap/VALIDATION_2026-08-29.md` (22456 bytes) — full E2E: `podman ps` 14 Up, `curl` health 200 localhost/host IP/public IP `18.143.199.84`, `SELECT version()` 18.6, `redis PONG`, `kafka green`, `vite build` 304k, `go vet` 9 svc 0, `go test` 7 PASS, `playwright` 7/11, `persist_test` before/after restart, `podman stats`, `podman logs`, `traefik` 404 (no routers). CRUD 404 (only `/health` implemented) — scaffold-complete not feature-complete, needs wiring `main.go` + handlers + BFF + Gateway + migrations auto-run.
+### Fixed
+- **T6.1 product-service validation**: `service.Create` tambah `if p.Stock<0 → ErrBadRequest` (sebelum cuma `Name`+`Price`), `handler.Create` `400 application/problem+json {code:BAD_REQUEST}` RFC 9457 (was `http.Error {"code":"BAD_REQUEST"} text/plain`). Verifikasi `go test TestCreateValidation` 4 case PASS (empty name, negative price, negative stock, valid) + `go test TestHandleCreateValidation` 400/201 `BAD_REQUEST` problem+json + `curl POST /v1/products {name:"",price:-1} →400` + `POST {name:kopi,price:10000,stock:-1}→400` + `POST {name:kopi,price:10000,stock:5}→201`.
+
+## [0.2.1] - 2026-08-29 — Validation
 
 
 
