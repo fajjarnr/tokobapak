@@ -79,7 +79,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.1] - 2026-08-30 — T7.2 order Saga minimal
 
 ### Added
-- **T7.2 order-service Saga**: `migrations/001_init.sql` tambah `idempotency_key TEXT UNIQUE`, `domain/model.Order{IdempotencyKey}`, `port.OrderRepository{GetByIdempotencyKey}`, `postgres.Create` TX `INSERT orders(PENDING)+order_items+outbox tokobapak.order.created.v1` + `GetByIdempotencyKey` + `UpdateStatus FOR UPDATE`, `service.CreateOrder` `X-Idempotency-Key` wajib→check existing→ReserveStock `Qty>0`→total `sum(price*qty)` default 50000→INSERT PENDING+T X, `handler POST /v1/orders` 400 jika tanpa `X-Idempotency-Key` / `items empty` → 201 `{id,total,status}` + `GET /v1/orders/{id}`, `main.go` wiring `pgxpool+kafka Writer+OutboxPoller.Start` `brokers` `kafka:29092`, `handler_test TestCreateOrderHandler` 4 case PASS (no idem 400, valid 201 total 100000, replay same idem 200 same ID, GET 200).
+- **T7.2 order-service Saga**: `migrations/001_init.sql` tambah `idempotency_key TEXT UNIQUE`, `domain/model.Order{IdempotencyKey}`, `port.OrderRepository{GetByIdempotencyKey}`, `postgres.Create` TX `INSERT orders(PENDING)+order_items+outbox tokobapak.order.created.v1` + `GetByIdempotencyKey` + `UpdateStatus FOR UPDATE`, `service.CreateOrder` `X-Idempotency-Key` wajib→check existing→ReserveStock `Qty>0`→total `sum(price*qty)` default 50000→INSERT PENDING+T X, `handler POST /v1/orders` 400 jika tanpa `X-Idempotency-Key` / `items empty` → 201 `{id,total,status}` + `GET /v1/orders/{id}`, `main.go` wiring `pgxpool+kafka Writer+OutboxPoller.Start` `brokers` `kafka:29092`, `handler_test TestCreateOrderHandler` 4 case PASS (no idem 400, valid 201 total 100000, replay same idem same ID, GET 200).
+
+## [0.4.2] - 2026-08-30 — T7.3 payment outbox poller
+
+### Added
+- **T7.3 payment outbox poller**: `postgres.Create` TX `INSERT payments` + `INSERT outbox(tokobapak.payment.completed.v1 {order_id,payu_reference,amount,status})` JSON, `cmd/server/main.go` `kafka.NewOutboxPoller(pool, brokers)` `go poller.Start(ctx)` `brokers kafka:29092` `outbox poller started`, `outbox_poller.go` `SELECT FOR UPDATE SKIP LOCKED` 5s → `kafka.Writer.WriteMessages` + DLQ `.dlq` → `DELETE outbox`. Verifikasi `podman logs payment-service outbox poller started` + `kafka-console-consumer --topic tokobapak.payment.completed.v1` → JSON.
 
 ## [0.2.1] - 2026-08-29 — Validation
 

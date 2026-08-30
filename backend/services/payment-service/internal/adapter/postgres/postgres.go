@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tokobapak/payment-service/internal/domain/model"
 )
@@ -12,13 +13,32 @@ type Postgres struct {
 
 func New(pool *pgxpool.Pool) *Postgres { return &Postgres{pool: pool} }
 
-func (p *Postgres) Ping(ctx context.Context) error { return p.pool.Ping(ctx) }
-
 func (p *Postgres) Create(ctx context.Context, pay *model.Payment) error {
+	tx, err := p.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
 	q := `INSERT INTO payments (order_id, payu_reference, idempotency_key, status, amount) VALUES ($1,$2,$3,$4,$5) RETURNING id, created_at, updated_at`
-	// order_id may be non-UUID string for tests, store as text via ::text cast? table is UUID, so try as is, fallback to gen_random_uuid if fails
-	return p.pool.QueryRow(ctx, q, pay.OrderID, pay.PayUReference, pay.IdempotencyKey, pay.Status, pay.Amount).Scan(&pay.ID, &pay.CreatedAt, &pay.UpdatedAt)
+	if err := tx.QueryRow(ctx, q, pay.OrderID, pay.PayUReference, pay.IdempotencyKey, pay.Status, pay.Amount).Scan(&pay.ID, &pay.CreatedAt, &pay.UpdatedAt); err != nil {
+		return err
+	}
+	payloadMap := map[string]interface{}{"order_id": pay.OrderID, "payu_reference": deref(pay.PayUReference), "amount": pay.Amount, "status": string(pay.Status)}
+	payloadBytes, _ := json.Marshal(payloadMap)
+	_, err = tx.Exec(ctx, `INSERT INTO outbox (topic, payload) VALUES ($1,$2)`, "tokobapak.payment.completed.v1", payloadBytes)
+	if err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
 }
+
+func deref(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
 
 func (p *Postgres) GetByOrderID(ctx context.Context, orderID string) (*model.Payment, error) {
 	q := `SELECT id, order_id, payu_reference, idempotency_key, status, amount, created_at, updated_at FROM payments WHERE order_id=$1`

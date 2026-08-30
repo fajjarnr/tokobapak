@@ -5,12 +5,14 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tokobapak/payment-service/config"
 	httpAdapter "github.com/tokobapak/payment-service/internal/adapter/http"
 	"github.com/tokobapak/payment-service/internal/adapter/client/payu"
+	"github.com/tokobapak/payment-service/internal/adapter/kafka"
 	pgAdapter "github.com/tokobapak/payment-service/internal/adapter/postgres"
 	"github.com/tokobapak/payment-service/internal/application/service"
 )
@@ -60,6 +62,15 @@ func main() {
 	}
 	repo := pgAdapter.New(pool)
 	svc := service.NewService(repo, payuClient)
+	// start outbox poller
+	brokers := strings.Split(cfg.KafkaBrokers, ",")
+	poller := kafka.NewOutboxPoller(pool, brokers)
+	go func() {
+		if err := poller.Start(context.Background()); err != nil {
+			log.Printf("outbox poller stopped: %v", err)
+		}
+	}()
+	log.Printf("outbox poller started brokers=%s", cfg.KafkaBrokers)
 	handler := httpAdapter.NewRouter(svc, payuClient)
 	log.Printf("payment-service listening on :%s payu:%s", port, payuURL)
 	if err := http.ListenAndServe(":"+port, handler); err != nil {
