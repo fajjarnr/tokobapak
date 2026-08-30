@@ -13,6 +13,7 @@ export const Route = createFileRoute('/checkout/')({
 })
 function Checkout() {
   const storeItems = useCartStore((s) => s.items)
+  const totalPrice = useCartStore((s) => s.totalPrice())
   const [lsHasItems] = React.useState(() => {
     if (typeof window === 'undefined') return false
     try {
@@ -27,17 +28,30 @@ function Checkout() {
   const hasItems = storeItems.length > 0 || lsHasItems
   const [isPlacing, setIsPlacing] = React.useState(false)
   const [payResult, setPayResult] = React.useState<string | null>(null)
+  const [payError, setPayError] = React.useState<string | null>(null)
+  // HALF_EVEN minor unit: prices are BIGINT, totalPrice already minor unit, round HALF_EVEN if needed
+  const total = totalPrice()
   const handlePlaceOrder = async () => {
     setIsPlacing(true)
+    setPayError(null)
     const orderId = `order-${Date.now()}`
     const idem = `idem-${orderId}-${Math.random().toString(36).slice(2)}`
+    // HALF_EVEN: amount is BIGINT minor unit, ensure integer
+    const amount = Math.round(total)
     try {
       const res = await fetch('/api/v1/payments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Idempotency-Key': idem },
-        body: JSON.stringify({ order_id: orderId, amount: 110000 }),
+        body: JSON.stringify({ order_id: orderId, amount }),
       })
       const data = await res.json()
+      if (!res.ok) {
+        // RFC 9457 problem+json
+        const msg = data.code || data.title || data.detail || `error ${res.status}`
+        setPayError(msg)
+        setPayResult(`PayU error: ${msg}`)
+        return
+      }
       if (res.ok) setPayResult(`PayU ref: ${data.payu_reference || data.payuReference || data.id} • ${data.status}`)
       else setPayResult(`PayU error: ${data.code || res.status}`)
     } catch {
@@ -128,10 +142,11 @@ function Checkout() {
 
         <div className="p-6 border-2 border-border shadow-sm bg-card h-fit">
           <h2 className="font-bold mb-4">Order Summary</h2>
-          <p className="flex justify-between mb-4"><span>Subtotal</span><span className="font-bold">Rp 100.000</span></p>
-          <p className="flex justify-between mb-4"><span>Total</span><span className="font-bold">Rp 110.000</span></p>
+          <p className="flex justify-between mb-4"><span>Subtotal</span><span className="font-bold">Rp {total.toLocaleString('id-ID')}</span></p>
+          <p className="flex justify-between mb-4"><span>Total</span><span className="font-bold">Rp {total.toLocaleString('id-ID')}</span></p>
           <Button className="w-full" onClick={handlePlaceOrder} disabled={isPlacing}>{isPlacing ? 'Processing...' : 'Place Order'}</Button>
           {payResult && <p className="mt-4 text-sm p-2 border border-border bg-muted" data-testid="payu-result">{payResult}</p>}
+          {payError && <p className="mt-2 text-sm text-destructive" data-testid="payu-error">{payError}</p>}
         </div>
       </main>
       <Footer />

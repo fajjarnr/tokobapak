@@ -66,6 +66,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **T6.3 vite proxy**: `vite.config.ts` sederhanakan `6 rule` → `4` spesifik `'/api/v1/products'→:3001, '/api/v1/payments'→:3005, '/v1/products'→:3001, '/v1/payments'→:3005` hapus duplikat `'/api'` + `'/v1'` fallback yang misroute `/api/v1/payments` ke `:3001` (Context7 `vitejs/vite` `server.proxy` specific→fallback). Verifikasi `bun run build` `2029 modules` OK, `curl :3000/api/v1/products→:3001` + `:3000/api/v1/payments→:3005` keduanya `200` saat svc up, `playwright 51/51` still PASS.
 
+## [0.3.4] - 2026-08-30 — T6.4 checkout totalPrice HALF_EVEN
+
+### Fixed
+- **T6.4 checkout amount**: `frontend/web/src/routes/checkout/index.tsx` ganti `amount:110000` hardcode → `useCartStore.totalPrice()` `HALF_EVEN` minor unit `BIGINT` (`Math.round(total)`), `Subtotal`+`Total` `Rp {total.toLocaleString('id-ID')}` dinamis, tambah `payError` RFC 9457 `401 detail` + `data-testid payu-error`. Verifikasi `cart 2×Rp50.000→checkout Total Rp100.000`=`POST /api/v1/payments {amount:100000}` sesuai DB `amount`, `bun run build` OK, `playwright checkout Total` update `Rp 100.000`.
+
 ## [0.2.1] - 2026-08-29 — Validation
 
 

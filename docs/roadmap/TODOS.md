@@ -14,7 +14,7 @@
 
 ## Status — Fase 7 OPEN (Audit 2026-08-30 — BELUM BISA BAYAR)
 
-> 29 Aug 2026: Fase 0–5 CLOSED (32 tasks archived). **30 Aug 2026: audit TokoBapak→PayU menemukan mock-only** → Fase 6 (3/4 OPEN T6.1–T6.4) + **Fase 7 NEW 8 tasks T7.1–T7.8** (CRITICAL: payu_client mock→real SNAP-BI, order-service scaffold→Saga, callback auth, outbox start). Prioritas `T7.1,T7.2,T7.4,T7.7` dulu → baru `T7.3,T7.5,T7.6`. Detail audit di `payu/docs/roadmap/TODOS.md PAYU-TB-001..005`.
+> 29 Aug 2026: Fase 0–5 CLOSED (32 tasks archived). **30 Aug 2026: audit TokoBapak→PayU menemukan mock-only** → Fase 6 CLOSED (4/4 T6.1–T6.4 done) + **Fase 7 NEW 8 tasks T7.1–T7.8 OPEN** (CRITICAL: payu_client mock→real SNAP-BI, order-service scaffold→Saga, callback auth, outbox start). Detail audit di `payu/docs/roadmap/TODOS.md PAYU-TB-001..005`.
 | Fase | Tasks | Result | Evidence |
 |------|-------|--------|----------|
 | **Fase 0** Freeze & Cleanup | T0.1–T0.5 | ✅ | `CONTEXT.md` glossary, `podman-compose.yml` HIDDEN 9, `postgres:18-alpine` `SELECT version()` 18.6, `ARCHITECTURE.md` TanStack Start |
@@ -23,14 +23,13 @@
 | **Fase 3** PayU & E2E | T3.1–T3.3 | ✅ | `payu_client.go` HMAC 64hex, replay 200, `reconciliation.go` 24h |
 | **Fase 4** Validasi | T4.1–T4.3 | ✅ | `podman ps` 14 Up, `PONG`/`version()` 18.6, `podman restart` persist |
 | **Fase 5** Dokumentasi & API | T5.1–T5.5 | ✅ | `PRD.md`/`FLOW.md`/`FEATURES.md` unified, `STANDARD.md` RFC 9457, `openapi.yaml` 27 paths 0 errors |
+| **Fase 6** Stabilisasi | T6.1–T6.4 | ✅ | `product validation 400 BAD_REQUEST` `payu callback 401` `vite 6→4` `checkout totalPrice()` `HALF_EVEN` `bun build 2029` |
 
 > Archived: 32 `- [x]` lines removed per workflow step 5 ("remove completed item after verification"). Full history in `git show` for each Fase.
 
 ## Fase 6 — Stabilisasi Tanpa Fitur Baru (Context7 Verified 29 Aug 2026)
 
 > Fokus: perbaiki service & feature existing, jangan tambah apapun dulu. Semua task dibawah sudah cek Context7 sebelum masuk TODOS (Vite proxy, PayU SNAP-BI HMAC, Go chi/pgx). Task kecil, surgical, ponytail.
-
-- [ ] **T6.4** `checkout` `amount:110000` hardcode → `useCartStore.totalPrice()` + `HALF_EVEN` minor unit (AGENTS rule 1). Context7 `websites/tailwindcss` tidak perlu, tapi `AGENTS.md Money` `BIGINT` `HALF_EVEN` + `hook useCartStore` sudah ada. Verifikasi: `cart 2 item Rp50.000 → checkout Total Rp100.000` + `POST /api/v1/payments {amount:100000}` sesuai DB `amount`, `playwright checkout Total` masih `Rp 110.000` → update `expect` `Total` `Rp 100.000`.
 
 ## Fase 7 — PayU Real Payment (Audit 2026-08-30 — BELUM BISA BAYAR, mock-only)
 
