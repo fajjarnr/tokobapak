@@ -33,6 +33,9 @@ func main() {
 	}
 	payuSecret := os.Getenv("PAYU_SECRET")
 	if payuSecret == "" {
+		payuSecret = os.Getenv("PAYU_HMAC_SECRET")
+	}
+	if payuSecret == "" {
 		payuSecret = "dev-secret"
 	}
 	payuClient := payu.New(payuURL, payuSecret)
@@ -40,7 +43,7 @@ func main() {
 	pool, err := pgxpool.New(context.Background(), dsn)
 	if err != nil {
 		log.Printf("db pool error: %v (no DB)", err)
-		handler := httpAdapter.NewRouter(nil)
+		handler := httpAdapter.NewRouter(nil, payuClient)
 		log.Printf("payment-service listening on :%s payu:%s (no DB)", port, payuURL)
 		if err := http.ListenAndServe(":"+port, handler); err != nil {
 			log.Fatal(err)
@@ -57,7 +60,7 @@ func main() {
 	}
 	repo := pgAdapter.New(pool)
 	svc := service.NewService(repo, payuClient)
-	handler := httpAdapter.NewRouter(svc)
+	handler := httpAdapter.NewRouter(svc, payuClient)
 	log.Printf("payment-service listening on :%s payu:%s", port, payuURL)
 	if err := http.ListenAndServe(":"+port, handler); err != nil {
 		log.Fatal(err)

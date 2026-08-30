@@ -29,6 +29,31 @@ func (c *Client) Sign(payload string, timestamp string) string {
 	return hex.EncodeToString(mac.Sum(nil))
 }
 
+func (c *Client) VerifyCallbackSignature(r *http.Request, body []byte) bool {
+	sig := r.Header.Get("X-SIGNATURE")
+	ts := r.Header.Get("X-TIMESTAMP")
+	if sig == "" || ts == "" {
+		return false
+	}
+	if !isTimestampValid(ts) {
+		return false
+	}
+	expected := c.Sign(string(body), ts)
+	return hmac.Equal([]byte(expected), []byte(sig))
+}
+
+func isTimestampValid(ts string) bool {
+	t, err := time.Parse(time.RFC3339, ts)
+	if err != nil {
+		return false
+	}
+	diff := time.Since(t)
+	if diff < 0 {
+		diff = -diff
+	}
+	return diff.Seconds() <= 300
+}
+
 func (c *Client) CreateTransaction(ctx context.Context, orderID string, amount int64, idempotencyKey string) (string, error) {
 	timestamp := time.Now().UTC().Format(time.RFC3339)
 	payload := fmt.Sprintf(`{"partnerReferenceNo":"%s","amount":{"value":"%d","currency":"IDR"}}`, orderID, amount)

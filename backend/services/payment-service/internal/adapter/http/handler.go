@@ -1,16 +1,19 @@
 package http
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/tokobapak/payment-service/internal/adapter/client/payu"
 	"github.com/tokobapak/payment-service/internal/application/service"
 	"github.com/tokobapak/payment-service/internal/domain/model"
 )
 
-func NewRouter(svc *service.Service) http.Handler {
+func NewRouter(svc *service.Service, payuClient ...*payu.Client) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
@@ -27,8 +30,12 @@ func NewRouter(svc *service.Service) http.Handler {
 	})
 	r.Post("/v1/payments", handleCreate(svc))
 	r.Post("/api/v1/payments", handleCreate(svc))
-	r.Post("/v1/payments/callback", handleCallback(svc))
-	r.Post("/api/v1/payments/callback", handleCallback(svc))
+	var pc *payu.Client
+	if len(payuClient) > 0 {
+		pc = payuClient[0]
+	}
+	r.Post("/v1/payments/callback", handleCallback(svc, pc))
+	r.Post("/api/v1/payments/callback", handleCallback(svc, pc))
 	r.Get("/v1/payments/{id}", handleGet(svc))
 	r.Get("/api/v1/payments/{id}", handleGet(svc))
 	return r
@@ -81,18 +88,30 @@ func handleCreate(svc *service.Service) http.HandlerFunc {
 	}
 }
 
-func handleCallback(svc *service.Service) http.HandlerFunc {
+func handleCallback(svc *service.Service, payuClient *payu.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		bodyBytes, _ := io.ReadAll(r.Body)
+		// restore body for potential downstream use
+		r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+		if payuClient != nil {
+			if !payuClient.VerifyCallbackSignature(r, bodyBytes) {
+				w.Header().Set("Content-Type", "application/problem+json")
+				w.WriteHeader(http.StatusUnauthorized)
+				_ = json.NewEncoder(w).Encode(map[string]string{"type": "about:blank", "title": "Unauthorized", "code": "UNAUTHORIZED", "detail": "invalid signature"})
+				return
+			}
+		}
 		if svc == nil {
 			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 			return
 		}
 		var req struct {
-			OrderID     string `json:"order_id"`
-			PayURef     string `json:"payu_reference"`
-			Status      string `json:"status"`
+			OrderID string `json:"order_id"`
+			PayURef string `json:"payu_reference"`
+			Status  string `json:"status"`
 		}
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		if err := json.Unmarshal(bodyBytes, &req); err != nil {
 			http.Error(w, `{"code":"BAD_REQUEST"}`, http.StatusBadRequest)
 			return
 		}
@@ -101,7 +120,6 @@ func handleCallback(svc *service.Service) http.HandlerFunc {
 			status = model.PaymentCompleted
 		}
 		if err := svc.Callback(r.Context(), req.OrderID, req.PayURef, status); err != nil {
-			// idempotent: return 200 even if already processed
 			w.WriteHeader(http.StatusOK)
 			_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 			return

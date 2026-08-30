@@ -56,6 +56,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **T6.1 product-service validation**: `service.Create` tambah `if p.Stock<0 → ErrBadRequest` (sebelum cuma `Name`+`Price`), `handler.Create` `400 application/problem+json {code:BAD_REQUEST}` RFC 9457 (was `http.Error {"code":"BAD_REQUEST"} text/plain`). Verifikasi `go test TestCreateValidation` 4 case PASS (empty name, negative price, negative stock, valid) + `go test TestHandleCreateValidation` 400/201 `BAD_REQUEST` problem+json + `curl POST /v1/products {name:"",price:-1} →400` + `POST {name:kopi,price:10000,stock:-1}→400` + `POST {name:kopi,price:10000,stock:5}→201`.
 
+## [0.3.2] - 2026-08-30 — T6.2 payment callback HMAC
+
+### Fixed
+- **T6.2 payment-service callback verify**: `payu_client.go` tambah `VerifyCallbackSignature(r, body)` HMAC-SHA256 `payload+timestamp` hex + `isTimestampValid ±300s` (sesuai `SnapBiController:67`), `handler.handleCallback` baca `io.ReadAll` raw body → verify → `401 application/problem+json UNAUTHORIZED` jika gagal, `FOR UPDATE` tetap idempoten 2× replay 200. Verifikasi `go test TestCallbackSignatureVerification` 4 case PASS (no sig 401, invalid sig 401, valid 200, replay 200) + `curl POST /v1/payments/callback` tanpa `X-SIGNATURE`→401 + dengan HMAC valid→200.
+
 ## [0.2.1] - 2026-08-29 — Validation
 
 
