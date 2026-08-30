@@ -61,6 +61,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **T6.2 payment-service callback verify**: `payu_client.go` tambah `VerifyCallbackSignature(r, body)` HMAC-SHA256 `payload+timestamp` hex + `isTimestampValid ±300s` (sesuai `SnapBiController:67`), `handler.handleCallback` baca `io.ReadAll` raw body → verify → `401 application/problem+json UNAUTHORIZED` jika gagal, `FOR UPDATE` tetap idempoten 2× replay 200. Verifikasi `go test TestCallbackSignatureVerification` 4 case PASS (no sig 401, invalid sig 401, valid 200, replay 200) + `curl POST /v1/payments/callback` tanpa `X-SIGNATURE`→401 + dengan HMAC valid→200.
 
+## [0.3.3] - 2026-08-30 — T6.3 vite proxy 6→4
+
+### Fixed
+- **T6.3 vite proxy**: `vite.config.ts` sederhanakan `6 rule` → `4` spesifik `'/api/v1/products'→:3001, '/api/v1/payments'→:3005, '/v1/products'→:3001, '/v1/payments'→:3005` hapus duplikat `'/api'` + `'/v1'` fallback yang misroute `/api/v1/payments` ke `:3001` (Context7 `vitejs/vite` `server.proxy` specific→fallback). Verifikasi `bun run build` `2029 modules` OK, `curl :3000/api/v1/products→:3001` + `:3000/api/v1/payments→:3005` keduanya `200` saat svc up, `playwright 51/51` still PASS.
+
 ## [0.2.1] - 2026-08-29 — Validation
 
 

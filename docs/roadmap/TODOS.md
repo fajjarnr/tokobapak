@@ -30,7 +30,6 @@
 
 > Fokus: perbaiki service & feature existing, jangan tambah apapun dulu. Semua task dibawah sudah cek Context7 sebelum masuk TODOS (Vite proxy, PayU SNAP-BI HMAC, Go chi/pgx). Task kecil, surgical, ponytail.
 
-- [ ] **T6.3** `frontend/web/vite.config.ts` sederhanakan proxy `6 rule` → `4` spesifik (Context7 `vitejs/vite` `server.proxy` — `string shorthand` + `rewrite` + `changeOrigin`, urutan `specific → fallback`). Hapus duplikat `'/api'` + `'/v1'` fallback yang misroute `/api/v1/payments` ke `:3001`. Verifikasi: `vite build` `1991 modules` tetap, `curl :3000/api/v1/products → :3001` + `:3000/api/v1/payments → :3005` keduanya `200`, `playwright 51/51`.
 - [ ] **T6.4** `checkout` `amount:110000` hardcode → `useCartStore.totalPrice()` + `HALF_EVEN` minor unit (AGENTS rule 1). Context7 `websites/tailwindcss` tidak perlu, tapi `AGENTS.md Money` `BIGINT` `HALF_EVEN` + `hook useCartStore` sudah ada. Verifikasi: `cart 2 item Rp50.000 → checkout Total Rp100.000` + `POST /api/v1/payments {amount:100000}` sesuai DB `amount`, `playwright checkout Total` masih `Rp 110.000` → update `expect` `Total` `Rp 100.000`.
 
 ## Fase 7 — PayU Real Payment (Audit 2026-08-30 — BELUM BISA BAYAR, mock-only)
