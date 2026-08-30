@@ -196,14 +196,20 @@ services:
       - DB_PASSWORD=postgres
       - DB_NAME=tokobapak_payments
       - KAFKA_BROKERS=kafka:29092
-      - PAYU_BASE_URL=${PAYU_BASE_URL:-http://payu-gateway:8080}
+      - PAYU_BASE_URL=${PAYU_BASE_URL:-http://payu-partner-service:8080}
       - PAYU_HMAC_SECRET=${PAYU_HMAC_SECRET:-dev-secret}
+      - PAYU_CLIENT_KEY=${PAYU_CLIENT_KEY:-tokobapak-mvp}
+      - PAYU_CLIENT_ID=${PAYU_CLIENT_ID:-tokobapak-mvp}
+      - PAYU_SOURCE_ACCOUNT=${PAYU_SOURCE_ACCOUNT:-ACC_TOKOBAPAK_ESCROW}
+      - PAYU_BENEFICIARY_ACCOUNT=${PAYU_BENEFICIARY_ACCOUNT:-ACC_SELLER_001}
     depends_on:
       postgres:
         condition: service_healthy
       kafka:
         condition: service_healthy
-
+    networks:
+      - default
+      - payu-network
   shipping-service:
     build:
       context: ../../backend/services/shipping-service
@@ -281,3 +287,10 @@ volumes:
   postgres_data:
   redis_data:
   elasticsearch_data:
+
+networks:
+  default:
+    driver: bridge
+  payu-network:
+    external: true
+    name: podman_payu-network

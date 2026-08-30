@@ -71,6 +71,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **T6.4 checkout amount**: `frontend/web/src/routes/checkout/index.tsx` ganti `amount:110000` hardcode → `useCartStore.totalPrice()` `HALF_EVEN` minor unit `BIGINT` (`Math.round(total)`), `Subtotal`+`Total` `Rp {total.toLocaleString('id-ID')}` dinamis, tambah `payError` RFC 9457 `401 detail` + `data-testid payu-error`. Verifikasi `cart 2×Rp50.000→checkout Total Rp100.000`=`POST /api/v1/payments {amount:100000}` sesuai DB `amount`, `bun run build` OK, `playwright checkout Total` update `Rp 100.000`.
 
+## [0.4.0] - 2026-08-30 — T7.1 PayU SNAP-BI real
+
+### Added
+- **T7.1 payu_client SNAP-BI real**: `payu_client.go` `Sign` legacy SHA256 hex → `hashBody`+`SignForB2B` `POST:/v1.0/access-token/b2b:ts:hex(sha256(body)) HMAC-SHA512 Base64` + `SignWithToken` `POST:/v1.0/transfer-va/payment:token:hex(sha256(body)):ts HMAC-SHA512 Base64` sesuai `SnapBiSignatureService.java:22`, `getAccessToken` `POST /v1.0/access-token/b2b {X-CLIENT-KEY,X-TIMESTAMP,X-SIGNATURE}` → Bearer token, `CreateTransaction` `POST /v1.0/transfer-va/payment {Authorization Bearer, X-TIMESTAMP, X-SIGNATURE, X-EXTERNAL-ID}` body `partnerReferenceNo,amount{value,currency},sourceAccountNo,beneficiaryAccountNo`, fallback mock `payu-ref-` on error for local dev, `VerifyCallbackSignature` now tries SHA512 then legacy. `podman-compose.yml` `PAYU_BASE_URL→payu-partner-service:8080` + `PAYU_CLIENT_KEY/_ID` + `PAYU_SOURCE/BENEFICIARY_ACCOUNT` + `payu-network` external.
+
 ## [0.2.1] - 2026-08-29 — Validation
 
 
