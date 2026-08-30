@@ -77,6 +77,18 @@ func handleCreate(svc *service.Service) http.HandlerFunc {
 		}
 		p, err := svc.CreatePayment(r.Context(), req.OrderID, req.Amount, idem)
 		if err != nil {
+			if err == model.ErrNotFound {
+				w.Header().Set("Content-Type", "application/problem+json")
+				w.WriteHeader(http.StatusNotFound)
+				_ = json.NewEncoder(w).Encode(map[string]string{"code": "NOT_FOUND", "detail": err.Error()})
+				return
+			}
+			if err == model.ErrConflict {
+				w.Header().Set("Content-Type", "application/problem+json")
+				w.WriteHeader(http.StatusConflict)
+				_ = json.NewEncoder(w).Encode(map[string]string{"code": "CONFLICT", "detail": err.Error()})
+				return
+			}
 			w.Header().Set("Content-Type", "application/problem+json")
 			w.WriteHeader(http.StatusBadRequest)
 			_ = json.NewEncoder(w).Encode(map[string]string{"code": "BAD_REQUEST", "detail": err.Error()})

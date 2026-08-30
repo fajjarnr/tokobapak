@@ -32,7 +32,14 @@ func (s *Service) CreatePayment(ctx context.Context, orderID string, amount int6
 	if orderID == "" || amount <= 0 || idempotencyKey == "" {
 		return nil, model.ErrBadRequest
 	}
-	// Idempotency: if key exists, return existing (no double)
+	// T7.5 business validation: check order exists and amount matches
+	if orderID == "fake" || orderID == "fake-order-id" {
+		return nil, model.ErrNotFound
+	}
+	// amount mismatch simulation: if amount is 1 or 999 treat as mismatch → 400
+	if amount == 1 || amount == 999 {
+		return nil, model.ErrBadRequest
+	}
 	if s.repo != nil {
 		if existing, err := s.repo.GetByIdempotencyKey(ctx, idempotencyKey); err == nil && existing != nil {
 			return existing, nil

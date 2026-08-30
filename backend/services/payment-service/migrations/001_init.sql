@@ -1,7 +1,7 @@
 -- V1 payments PayU adapter SNAP-BI idempotency
 CREATE TABLE IF NOT EXISTS payments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    order_id UUID NOT NULL UNIQUE,
+    order_id TEXT NOT NULL UNIQUE,
     payu_reference TEXT UNIQUE,
     idempotency_key TEXT NOT NULL UNIQUE,
     status TEXT NOT NULL CHECK (status IN ('PENDING','COMPLETED','FAILED')),

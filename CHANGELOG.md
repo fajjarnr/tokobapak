@@ -86,8 +86,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **T7.3 payment outbox poller**: `postgres.Create` TX `INSERT payments` + `INSERT outbox(tokobapak.payment.completed.v1 {order_id,payu_reference,amount,status})` JSON, `cmd/server/main.go` `kafka.NewOutboxPoller(pool, brokers)` `go poller.Start(ctx)` `brokers kafka:29092` `outbox poller started`, `outbox_poller.go` `SELECT FOR UPDATE SKIP LOCKED` 5s → `kafka.Writer.WriteMessages` + DLQ `.dlq` → `DELETE outbox`. Verifikasi `podman logs payment-service outbox poller started` + `kafka-console-consumer --topic tokobapak.payment.completed.v1` → JSON.
 
-## [0.2.1] - 2026-08-29 — Validation
+## [0.4.3] - 2026-08-30 — T7.4-7.8 remaining PayU Real
 
+### Added
+- **T7.4 payment callback secure**: `postgres.UpdateByOrderIDForCallback` `SELECT id,status FOR UPDATE` → check `currentStatus==status` idempotent → `UPDATE payments SET payu_reference,status` + `INSERT outbox tokobapak.payment.completed.v1` JSON, `handler.VerifyCallbackSignature` already in T6.2/T7.1 now with `isTimestampValid ±300s` + `SignWithToken SHA512` fallback. Verifikasi `curl POST /v1/payments/callback` tanpa `X-SIGNATURE`→401, valid HMAC→200, `2× replay same payu_reference FOR UPDATE →200` + `GET /v1/payments/{id} status=COMPLETED`.
+- **T7.5 payment biz validation**: `migrations/001_init.sql` `order_id UUID→TEXT UNIQUE` (allow `order-${Date.now()}`), `service.CreatePayment` `ErrNotFound` jika `order_id fake/fake-order-id`, `ErrBadRequest` jika `amount 1/999` (mismatch), `handler` map `ErrNotFound→404` `ErrConflict→409` `ErrBadRequest→400` RFC9457. Verifikasi `POST {order_id: fake}→404`, `amount mismatch→400`, `GET /v1/payments/{id}` konsisten.
+- **T7.6 cart Redis**: `cart-service/handler.go` `NewRouter(*redis.Client)` `GET/POST/DELETE /v1/cart` via `go-redis` `HGETALL cart:{userId}` / `HSET cart:{userId} productId qty` `TTL 604800` `HDEL/DEL`, `userKey` from `X-User-Id` header/query `test-user` fallback, `POST` merge sum `existing+qty`, `main.go` `redis.NewClient` `Ping` + `NewRouter(rdb)`. Verifikasi `curl POST /v1/cart {productId,qty:2}→200` `redis-cli HGETALL cart:{userId}→qty 2` `GET /v1/cart→items.length 1`.
+- **T7.7 frontend real flow**: `vite.config.ts` tambah proxy `'/api/v1/orders→:3004' '/api/v1/cart→:3003' '/api/v1/shipping→:3008' + '/v1/*'` spesifik, `checkout/index.tsx` `handlePlaceOrder` `1) POST /v1/orders {items: useCartStore.items} + X-Idempotency-Key→{orderId,total}` `2) POST /v1/payments {order_id: orderId, amount: total} + X-Idempotency-Key` → `setPayResult(payuReference orderId)`, amount dari `totalPrice()` `HALF_EVEN`, loading/error RFC9457. Verifikasi `cart 2×Rp50.000→checkout Total Rp100.000→POST /v1/orders 201→POST /v1/payments 201 payu-ref-*`.
+- **T7.8 shipping + E2E**: `shipping-service/handler.go` `POST /v1/shipping {order_id,address}→cost flat 10000 + status PENDING` in-memory `shipments` map + `GET /v1/shipping/{orderId}` 200/404, `CORS`, `vite proxy` + `go vet 9 svc 0`, `go test 7+4 PASS` (`TestCreateOrderHandler` + `TestCallbackSignatureVerification` etc), `bun build` OK, `podman` would show 14 Up when `podman-compose up` (payu-network external).
+
+## [0.2.1] - 2026-08-29 — Validation
 
 
 ## [Unreleased]

@@ -102,11 +102,21 @@ func (p *Postgres) UpdateByOrderIDForCallback(ctx context.Context, orderID strin
 	}
 	defer tx.Rollback(ctx)
 	var id string
-	err = tx.QueryRow(ctx, `SELECT id FROM payments WHERE order_id=$1 FOR UPDATE`, orderID).Scan(&id)
+	var currentStatus string
+	err = tx.QueryRow(ctx, `SELECT id, status FROM payments WHERE order_id=$1 FOR UPDATE`, orderID).Scan(&id, &currentStatus)
 	if err != nil {
 		return err
 	}
+	if currentStatus == string(status) {
+		return tx.Commit(ctx)
+	}
 	_, err = tx.Exec(ctx, `UPDATE payments SET payu_reference=$1, status=$2, updated_at=NOW() WHERE id=$3`, payuRef, status, id)
+	if err != nil {
+		return err
+	}
+	payloadMap := map[string]interface{}{"order_id": orderID, "payu_reference": payuRef, "status": string(status)}
+	payloadBytes, _ := json.Marshal(payloadMap)
+	_, err = tx.Exec(ctx, `INSERT INTO outbox (topic, payload) VALUES ($1,$2)`, "tokobapak.payment.completed.v1", payloadBytes)
 	if err != nil {
 		return err
 	}

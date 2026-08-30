@@ -2,74 +2,77 @@
 
 <div align="center">
 
-![TokoBapak Logo](./docs/assets/logo.png)
+**Marketplace MVP untuk Indonesia — Browse → Search → Keranjang → Checkout → Bayar (via PayU) → Kirim → Notifikasi**
 
-**Platform E-commerce Multi-Vendor Modern untuk Indonesia**
-
-[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![TanStack Start](https://img.shields.io/badge/TanStack_Start-1.121-black?style=for-the-badge)](https://tanstack.com/start)
+[![Go](https://img.shields.io/badge/Go-1.27-00ADD8?style=for-the-badge&logo=go)](https://go.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.x-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
 [![Bun](https://img.shields.io/badge/Bun-1.2+-fbf0df?style=for-the-badge&logo=bun)](https://bun.sh/)
 
-[Demo](https://demo.tokobapak.id) • [Dokumentasi](./docs) • [Kontribusi](./CONTRIBUTING.md) • [Changelog](./CHANGELOG.md)
+[Dokumentasi](./docs) • [PRD](./docs/product/PRD.md) • [Arsitektur](./docs/architecture/ARCHITECTURE.md) • [Changelog](./CHANGELOG.md)
 
 </div>
 
 ---
 
-## ✨ Tentang TokoBapak
+## ✨ Tentang
 
-**TokoBapak** adalah platform marketplace e-commerce modern yang dibangun dengan arsitektur microservices dan teknologi terkini. Platform ini dirancang untuk memberikan pengalaman berbelanja online yang seamless, cepat, dan aman untuk pasar Indonesia.
+**TokoBapak** adalah marketplace yang di-freeze MVP 26 Aug 2026 (ADR 0001–0004): **9 service Go 1.27 keep**, **9 service hide 1 bulan validasi**. Frontend **TanStack Start + Vite** (bukan Next.js). Pembayaran satu-satunya via **PayU SNAP-BI** — TokoBapak `payment-service` hanya thin adapter, sumber kebenaran dana ada di PayU `transaction-service`.
 
-### 🎯 Key Features
+> `CONTEXT.md` adalah glossary tunggal. `seller` = `users.role=SELLER`, `inventory` = kolom `products.stock`, `shipment` = mock flat (bukan RajaOngkir), `payment` ≠ PayU `Transaction`.
 
-- 🛍️ **Multi-Vendor Marketplace** - Seller dapat membuka toko dan menjual produk
-- 🔍 **Advanced Search** - Pencarian cepat dengan Elasticsearch
-- 💬 **Real-time Chat** - Komunikasi langsung dengan seller
-- 💳 **Multiple Payment Options** - Integrasi dengan berbagai payment gateway Indonesia
-- 🚚 **Shipping Integration** - JNE, J&T, SiCepat, GoSend, dan lainnya
-- 📱 **Mobile First** - Responsive design untuk semua device
-- 🤖 **Smart Recommendations** - ML-powered product recommendations
-- 🔐 **Secure** - Enterprise-grade security standards
+### 🎯 MVP Scope (9 keep / 9 hide)
+
+**Keep 9** — `auth :3007`, `user :3006`, `product :3001` (merge catalog+inventory), `cart :3003`, `order :3004` (Saga), `payment :3005` (PayU), `shipping :3008` (mock), `search :3010` (ES 1 index `products`), `notification :3009`.
+
+**Hide 9 (deleted 29 Aug 2026)** — `review, chat, media, promotion, seller standalone, recommendation, analytics, catalog standalone, inventory standalone` — lihat `docs/roadmap/SERVICES.md`.
+
+Journey: `Browse (/) → Search (ES) → Cart (Redis HSET TTL 7d) → Order Saga PENDING→RESERVED→PAID→SHIPPED → Payment PayU SNAP-BI → Shipping flat → Notification (Kafka tokobapak.payment.completed.v1)`
 
 ---
 
-## 🏗️ Arsitektur
-
-![System Architecture](docs/images/system_architecture.png)
+## 🏗️ Arsitektur MVP
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        CLIENTS                                   │
-│     Web App (Next.js)  │  Mobile (React Native)  │  Admin       │
-└──────────────────────────────┬──────────────────────────────────┘
-                               │
+┌─────────────────────────────────────────────────────────────────────────┐
+│  CLIENT  TanStack Start + Vite :3000  (BFF src/lib/bff.ts HttpOnly+CSRF)│
+└──────────────────────────────┬──────────────────────────────────────────┘
+                               │  HTTPS
                     ┌──────────▼──────────┐
-                    │    API Gateway      │
-                    │    (Kong/Nginx)     │
+                    │  Traefik v3.3 :8080 │  local: podman  cloud: ALB→Traefik
                     └──────────┬──────────┘
                                │
-    ┌──────────────────────────┼──────────────────────────┐
-    │ MICROSERVICES            │                          │
-    │  ┌─────────┐ ┌─────────┐ │ ┌─────────┐ ┌─────────┐  │
-    │  │  User   │ │ Product │ │ │  Order  │ │ Payment │  │
-    │  │ Service │ │ Service │ │ │ Service │ │ Service │  │
-    │  └────┬────┘ └────┬────┘ │ └────┬────┘ └────┬────┘  │
-    │       │           │      │      │           │       │
-    │  ┌────┴───────────┴──────┴──────┴───────────┴────┐  │
-    │  │              MESSAGE BROKER                    │  │
-    │  │                (Kafka)                         │  │
-    │  └────────────────────────────────────────────────┘  │
-    └─────────────────────────────────────────────────────-┘
+         ┌─────────────────────┼─────────────────────┐
+         │                     │                     │
+┌────────▼────────┐   ┌────────▼────────┐   ┌────────▼────────┐
+│  Auth Cluster   │   │  Core Services  │   │ Support Services│
+│  auth :3007     │   │ product :3001   │   │ search :3010    │
+│  user :3006     │   │ cart :3003      │   │ notification:3009│
+│  JWT 15m +      │   │ order :3004     │   │ shipping :3008  │
+│  refresh HttpOnly│  │ payment :3005 ──┼──►│  PayU SNAP-BI   │
+└────────┬────────┘   └────────┬────────┘   └────────┬────────┘
+         │                     │                     │
+         └─────────────────────┼─────────────────────┘
                                │
-    ┌──────────────────────────┼──────────────────────────┐
-    │ DATA LAYER               │                          │
-    │  ┌─────────┐ ┌─────────┐ │ ┌─────────┐ ┌─────────┐  │
-    │  │PostgreSQL│ │  Redis  │ │ │Elastic- │ │ Object  │  │
-    │  │  (RDS)  │ │ Cluster │ │ │ search  │ │ Storage │  │
-    │  └─────────┘ └─────────┘ │ └─────────┘ └─────────┘  │
-    └─────────────────────────────────────────────────────-┘
+         ┌─────────────────────┼─────────────────────┐
+         │                     │                     │
+┌────────▼────────┐   ┌────────▼───────┐   ┌────────▼────────┐
+│ RDS PostgreSQL  │   │ ElastiCache    │   │ Kafka KRaft     │
+│ t4g.micro 5432  │   │ t4g.micro 6379 │   │ apache/kafka:4  │
+│ tokobapak_*     │   │ cart HSET      │   │ 1 broker 9092   │
+└─────────────────┘   └────────────────┘   └─────────────────┘
+         └─────────────────────┼─────────────────────┘
+                               ▼
+                    ┌─────────────────┐
+                    │ Elasticsearch   │
+                    │ 8.17.0 :9200    │  1 index `products`
+                    └─────────────────┘
+Local: postgres:18-alpine / redis:alpine / apache/kafka:4.0.0 / elasticsearch:8.17.0 (podman m6a.4xlarge)
+Cloud: EKS EC2 + RDS t4g.micro + ElastiCache t4g.micro + Kafka self-host 1 broker → MSK Serverless
 ```
+
+Detail: `docs/architecture/ARCHITECTURE.md` + `docs/architecture/SEQUENCE_DIAGRAMS.md`
 
 ---
 
@@ -77,38 +80,45 @@
 
 ### Prerequisites
 
-- **Bun** >= 1.2.0 ([Install](https://bun.sh/))
-- **Node.js** >= 20.0.0 (untuk compatibility)
-- **Docker** & **Docker Compose** (untuk local development)
+- **Bun** >= 1.2.0 + **Node** >= 22
+- **Go** 1.27.0
+- **Podman** 4+ & **podman-compose** 1.0+
 
-### Installation
+### 1. Infra (4 services)
 
 ```bash
-# Clone repository
-git clone https://github.com/tokobapak/tokobapak.git
-cd tokobapak
-
-# Install dependencies untuk web application
-cd frontend/web
-bun install
-
-# Copy environment file
-cp .env.local.example .env.local
-
-# Jalankan development server
-bun dev
+cd infrastructure/local
+podman compose up -d          # postgres:18, redis, kafka:4 KRaft, elasticsearch:8.17
+podman exec tokobapak-postgres psql -U postgres -c "SELECT version();"
+podman exec tokobapak-redis redis-cli ping   # PONG
+curl http://localhost:9200/_cluster/health | grep -q 'green\|yellow'
 ```
 
-Buka [http://localhost:3000](http://localhost:3000) di browser.
-
-### Menjalankan dengan Docker
+### 2. Frontend (TanStack Start)
 
 ```bash
-# Jalankan semua services (development)
-docker-compose -f docker-compose.dev.yml up -d
+cd frontend/web
+bun install
+bun run dev                   # http://localhost:3000  (Vite + TanStack Router)
+bun run build                 # vite build → dist/ → nginx:alpine :8080
+```
 
-# Atau hanya backend services
-docker-compose up -d postgres redis kafka elasticsearch
+### 3. Backend (satu service)
+
+```bash
+cd backend/services/product-service
+go run cmd/server/main.go     # :3001
+# atau via compose
+cd infrastructure/local && podman compose up -d product-service --build
+```
+
+Cek health:
+
+```bash
+curl http://localhost:3001/health  # product
+curl http://localhost:3003/health  # cart
+curl http://localhost:3004/health  # order
+curl http://localhost:3005/health  # payment
 ```
 
 ---
@@ -117,34 +127,38 @@ docker-compose up -d postgres redis kafka elasticsearch
 
 ```
 tokobapak/
-├── frontend/                    # Frontend Applications
-│   ├── web/                     # 🌐 Next.js Customer Web App
-│   ├── mobile/                  # 📱 React Native Mobile App
-│   └── admin/                   # 📊 Admin Dashboard
-│
-├── backend/                     # Backend Microservices (MVP 9 Go 1.27)
-│   └── services/               # 9 MVP services per ADR 0001
-│       ├── auth-service/       # Go 1.27 chi jwt (3007)
-│       ├── user-service/       # Go 1.27 chi pgx (3006)
-│       ├── product-service/    # Go 1.27 chi pgx stock (3001)
-│       ├── cart-service/       # Go 1.27 chi go-redis (3003)
-│       ├── order-service/      # Go 1.27 Saga (3004)
-│       ├── payment-service/    # Go 1.27 PayU SNAP-BI (3005)
-│       ├── shipping-service/   # Go 1.27 mock (3008)
-│       ├── search-service/     # Go 1.27 go-elasticsearch (3010)
-│       └── notification-service/ # Go 1.27 kafka (3009)
-│
-├── infrastructure/             # Infrastructure as Code
-│   ├── kubernetes/            # K8s manifests
-│   ├── terraform/             # Terraform modules
-│   ├── helm/                  # Helm charts
-│   └── monitoring/            # Observability
-│
-├── database/                  # Migrations & Seeds
-├── docs/                      # Documentation
-├── tests/                     # Integration & E2E Tests
-└── scripts/                   # Automation Scripts
+├── frontend/web/                   # TanStack Start + Vite 6 (ADR 0004)
+│   ├── src/routes/                 # file-based routing (__root, products, cart, checkout, login)
+│   ├── src/lib/bff.ts              # BFF JWT relay HttpOnly + CSRF
+│   ├── src/shims/                  # next/image → unpic, next/font → font-sans, next-auth → shim
+│   ├── vite.config.ts              # tanstackRouter + tailwindcss + alias next/*
+│   ├── Dockerfile                  # bun build → nginx:alpine USER 1001 :8080
+│   └── e2e/                        # Playwright checkout.spec.ts
+├── backend/services/               # 9 MVP Go 1.27 uniform hexagonal (ADR 0002)
+│   ├── auth-service/       :3007   # chi + golang-jwt/jwt (access 15m + refresh HttpOnly)
+│   ├── user-service/       :3006   # chi + pgx (users.role SELLER)
+│   ├── product-service/    :3001   # chi + pgx + kafka-go (products.stock FOR UPDATE)
+│   ├── cart-service/       :3003   # chi + go-redis (HSET cart:{userId} TTL 604800)
+│   ├── order-service/      :3004   # chi + pgx Saga PENDING→RESERVED→PAID→SHIPPED
+│   ├── payment-service/    :3005   # chi + pgx + PayU SNAP-BI HMAC (X-SIGNATURE/X-TIMESTAMP)
+│   ├── shipping-service/   :3008   # chi + pgx mock flat cost
+│   ├── search-service/     :3010   # chi + go-elasticsearch TypedClient (index products)
+│   └── notification-service/:3009  # chi + kafka-go consumer tokobapak.payment.completed.v1
+├── infrastructure/local/
+│   ├── podman-compose.yml          # 4 infra + 9 services + traefik:v3.3 :8080
+│   └── init.sql
+├── docs/
+│   ├── adr/                        # 0001 MVP 9-svc, 0002 Go uniform, 0003 PayU SNAP-BI, 0004 TanStack
+│   ├── architecture/               # ARCHITECTURE.md + SEQUENCE_DIAGRAMS.md
+│   ├── product/                    # PRD.md + FLOW.md + FEATURES.md (single source MVP)
+│   ├── roadmap/                    # TODOS.md + SERVICES.md + PROGRESS.md
+│   ├── api/STANDARD.md             # RFC 9457 + /v1/plural-kebab
+│   └── ENVIRONMENT_VARIABLES.md    # env reference (sebelumnya salah — lihat catatan)
+├── CONTEXT.md                      # glossary (Product/Cart/Order/Payment vs PayU Transaction)
+└── AGENTS.md                       # non-negotiable rules (money, idempotency, outbox, hexagonal)
 ```
+
+Hide 9 dihapus permanen `5f58259` — tidak ada `catalog, inventory, seller, review, chat, media, promotion, recommendation, analytics`.
 
 ---
 
@@ -154,31 +168,50 @@ tokobapak/
 
 | Technology | Purpose |
 |------------|---------|
-| **TanStack Start + Vite 6** `TanStack Router` `TanStack Query` | SSR + file-based routing `src/routes` |
-| **TypeScript 5** | Type-safe |
-| **Tailwind CSS 4** `shadcn/ui` | UI |
+| **TanStack Start + Router 1.121 + Query 5.90** + **Vite 6.3** | SSR + file-based `src/routes`, `HydrationBoundary` prefetch |
+| **React 19.2** + **TypeScript 5** + **Tailwind CSS 4** + **shadcn/ui** | UI (`unpic` shim `next/image`, `font-sans` shim `next/font`) |
 | **Bun 1.2** | Runtime + package manager |
-| **BFF** `src/lib/bff.ts` | HttpOnly + CSRF relay |
+| **BFF** `src/lib/bff.ts` | HttpOnly cookie + CSRF, Token Relay server-side (sesuai PayU CONTEXT Browser Session) |
 
-### Backend — MVP 9 Go 1.27 uniform (ADR 0001/0002)
+### Backend — 9 Go 1.27 uniform (ADR 0001/0002)
 
 | Technology | Purpose |
 |------------|---------|
-| **Go 1.27** `chi` `pgx` `kafka-go` | 9 services uniform hexagonal |
-| **PostgreSQL 18** `pgx` | `users, products(stock), orders, payments, shipments` + outbox |
-| **Redis** `go-redis` | `cart` HSET TTL 7d |
-| **Elasticsearch 8.17** `go-elasticsearch` TypedClient | `search` 1 index `products` |
-| **Kafka 4 KRaft** `apache/kafka:4.0.0` | outbox `tokobapak.<domain>.<event>.v1` + `.dlq` |
+| **Go 1.27** `chi` `pgx` `kafka-go` `go-redis` `go-elasticsearch` `golang-jwt/jwt` | 9 services hexagonal lightweight |
+| **PostgreSQL 18** `pgx` | `tokobapak_{users,products,orders,payments,shipping}` + `outbox` per service |
+| **Redis** `go-redis` | `cart:{userId}` HSET TTL 7d (604800), merge `sum` saat login |
+| **Elasticsearch 8.17** `go-elasticsearch` TypedClient | 1 index `products` |
+| **Kafka 4 KRaft** `apache/kafka:4.0.0` `CLUSTER_ID 4L6g3nShT-eMCtK--X86sw` | outbox `tokobapak.<domain>.<event>.v1` + DLQ `.dlq` (poller `SELECT FOR UPDATE SKIP LOCKED` 5s) |
 
 ### Infrastructure — podman m6a.4xlarge local → EKS EC2 + RDS + ElastiCache + Kafka
 
 | Technology | Purpose |
 |------------|---------|
-| **Podman Compose** `postgres:18` `redis:alpine` `apache/kafka:4.0.0` `elasticsearch:8.17` | local 4 infra + 9 services |
-| **Traefik v3.3** | local gateway `:8080` (sim ALB→Traefik) |
-| **Kubernetes + Helm + Terraform** | EKS EC2 + RDS t4g.micro + ElastiCache t4g.micro + Kafka self-host |
-| **Prometheus + Grafana** | Metrics |
-| **ELK Stack** | Centralized logging |
+| **Podman Compose** `postgres:18-alpine` `redis:alpine` `apache/kafka:4.0.0` `elasticsearch:8.17.0` | local 4 infra + 9 services |
+| **Traefik v3.3** `:8080` | local gateway (sim ALB→Traefik), cloud `ALB→Traefik` — migrate→Kong jika butuh 3scale |
+| **Kubernetes + Helm + Terraform** | EKS EC2 + RDS t4g.micro + ElastiCache t4g.micro + Kafka self-host 1 broker |
+| **Distroless** `gcr.io/distroless/static-debian12:nonroot` `USER 1001:1001` `:8080` | container Go (readOnly FS, drop ALL caps) |
+| **Nginx alpine** `USER 1001:1001` `:8080` | frontend `dist/` |
+
+---
+
+## 🔌 Kontrak API & PayU
+
+- **Path versioned** `/v1/...` plural kebab-case, error **RFC 9457** dengan `code` unik — `docs/api/STANDARD.md`
+- **Money** `BIGINT` minor unit, `HALF_EVEN`, NEVER `float` — `CHECK (price >= 0)` di `migrations/001_init.sql`
+- **Idempotency** `X-Idempotency-Key` wajib di `POST /v1/orders`, `/v1/payments` — `UNIQUE(idempotency_key)` + `SELECT FOR UPDATE`
+- **No oversell** `DecrementStock` `SELECT ... FOR UPDATE` di `product-service`
+- **Outbox** `outbox(id, topic, payload JSONB, created_at)` + poller `kafka-go` → `tokobapak.<domain>.<event>.v1` + `.dlq` (bukan direct `kafka send`)
+- **PayU SNAP-BI** `payment-service` forward `X-Idempotency-Key` + `X-SIGNATURE=HMAC-SHA256(payload+timestamp, secret)` + `X-TIMESTAMP` ke `PAYU_BASE_URL` (default `http://payu-gateway:8080`), simpan `payments(order_id UNIQUE, payu_reference UNIQUE, idempotency_key UNIQUE)` — ADR 0003. Callback idempoten `FOR UPDATE`, replay 2× tetap `200`.
+
+Event:
+
+| Topic | Publisher | Consumer |
+|-------|-----------|----------|
+| `tokobapak.order.created.v1` | order-service | payment, shipping |
+| `tokobapak.payment.completed.v1` | payment-service | notification-service |
+| `tokobapak.shipment.created.v1` | shipping-service | notification-service |
+| `tokobapak.product.updated.v1` | product-service | search-service |
 
 ---
 
@@ -186,38 +219,38 @@ tokobapak/
 
 | Document | Description |
 |----------|-------------|
-| [GEMINI.md](./GEMINI.md) | AI Assistant Guidelines & Context |
-| [CHANGELOG.md](./CHANGELOG.md) | Version history |
-| [CONTRIBUTING.md](./CONTRIBUTING.md) | Contribution guidelines |
-| [docs/ARCHITECTURE.md](./docs/architecture/ARCHITECTURE.md) | System architecture |
-| [docs/API_DOCUMENTATION.md](./docs/api/API_DOCUMENTATION.md) | API specifications |
-| [frontend/prd.md](./frontend/prd.md) | Frontend PRD |
-| [backend/prd.md](./backend/prd.md) | Backend PRD |
+| [CONTEXT.md](./CONTEXT.md) | Glossary MVP (Product/Cart/Order/Payment vs PayU Transaction — baca dulu) |
+| [docs/product/PRD.md](./docs/product/PRD.md) | Single source PRD MVP 2.0 (menggabung backend+frontend PRD lama) |
+| [docs/product/FLOW.md](./docs/product/FLOW.md) | Journey Browse→Search→Cart→Checkout→Pay→Ship→Notify |
+| [docs/architecture/ARCHITECTURE.md](./docs/architecture/ARCHITECTURE.md) | System + microservices + data + event architecture |
+| [docs/architecture/SEQUENCE_DIAGRAMS.md](./docs/architecture/SEQUENCE_DIAGRAMS.md) | Sequence Saga & PayU callback |
+| [docs/adr/](./docs/adr/) | ADR 0001 MVP 9-svc, 0002 Go uniform, 0003 PayU SNAP-BI, 0004 TanStack Start |
+| [docs/roadmap/SERVICES.md](./docs/roadmap/SERVICES.md) | Status 9 keep / 9 hide + ports + health |
+| [docs/api/STANDARD.md](./docs/api/STANDARD.md) | API & error standard (RFC 9457) |
+| [docs/ENVIRONMENT_VARIABLES.md](./docs/ENVIRONMENT_VARIABLES.md) | Env reference (⚠️ sebagian masih template lama — truth di `podman-compose.yml`) |
+| [AGENTS.md](./AGENTS.md) | Non-negotiable rules + commands |
 
 ---
 
 ## 🧪 Testing
 
 ```bash
-# Frontend - Unit tests
+# Backend — Go 1.27 (semua service)
+go test ./... -count=1 -race
+go vet ./...
+
+# Frontend — Playwright E2E (51 tests)
 cd frontend/web
-bun test
+bun run test:e2e          # chromium, baseURL http://localhost:3000 locale id-ID
+bun run test:e2e:ui       # UI mode
+bun run test:e2e:report   # html report
 
-# Frontend - E2E tests
-bun test:e2e
-
-# Backend - Java services
-cd backend/services/user-service
-./mvnw test
-
-# Backend - Node.js services
-cd backend/services/product-service
-npm run test
-
-# Backend - Go services
-cd backend/services/catalog-service
-go test ./...
+# Single service
+go test ./internal/application/service -run TestOrderSaga
+./scripts/test-single-service.sh payment-service  # jika ada
 ```
+
+Tidak ada `mvnw test` / `npm run test` Java/NestJS — MVP Go uniform (ADR 0002). `cart-service` pakai `go-redis` mock, `search-service` pakai ES TypedClient.
 
 ---
 
@@ -226,74 +259,75 @@ go test ./...
 ### Available Scripts
 
 ```bash
-# Frontend Web
-bun dev          # Start development server
-bun build        # Production build
-bun start        # Start production server
-bun lint         # Run ESLint
-bun test         # Run tests
-bun format       # Format code with Prettier
+# Frontend (frontend/web)
+bun run dev          # vite --port 3000 (proxy /v1 → :3001/:3005)
+bun run build        # vite build → dist/
+bun run preview      # vite preview --port 3000
+bun run lint         # eslint
+bun run test:e2e     # playwright test
 
-# Docker
-docker-compose up -d                    # Start all services
-docker-compose -f docker-compose.dev.yml up -d  # Development mode
-docker-compose logs -f [service]        # View logs
-docker-compose down                     # Stop all services
+# Backend (per service)
+go run cmd/server/main.go
+go test ./... && go vet ./...
+
+# Infra
+podman compose -f infrastructure/local/podman-compose.yml up -d
+podman compose -f infrastructure/local/podman-compose.yml logs -f [service]
+podman compose -f infrastructure/local/podman-compose.yml down
+podman compose -f infrastructure/local/podman-compose.yml down -v  # hapus volumes
 ```
 
 ### Environment Variables
 
-Lihat `.env.example` untuk variabel yang diperlukan:
+Lihat `docs/ENVIRONMENT_VARIABLES.md` — **catatan:** file tersebut masih berisi template lama (Java/NestJS `MIDTRANS_`, `RAJAONGKIR_`, `ZOOKEEPER_`, port salah). **Truth untuk MVP**:
 
 ```env
-# API Configuration
-NEXT_PUBLIC_API_URL=http://localhost:8080
+# Auth :3007 / User :3006 / Product :3001 / Order :3004 / Payment :3005 / Shipping :3008
+PORT=3001
+DB_HOST=postgres
+DB_PORT=5432
+DB_USERNAME=postgres
+DB_PASSWORD=postgres
+DB_NAME=tokobapak_products   # tokobapak_users / tokobapak_orders / tokobapak_payments / tokobapak_shipping
+JWT_SECRET=tokobapak-dev-secret-min-32-chars
+KAFKA_BROKERS=kafka:29092     # internal 29092, external 9092
+REDIS_HOST=redis
+REDIS_PORT=6379
+REDIS_TTL_SECONDS=604800
+ELASTICSEARCH_NODE=http://elasticsearch:9200
+PAYU_BASE_URL=http://payu-gateway:8080
+PAYU_HMAC_SECRET=dev-secret
 
-# Authentication
-NEXTAUTH_SECRET=your-secret-key
-NEXTAUTH_URL=http://localhost:3000
-
-# Database
-DATABASE_URL=postgresql://user:password@localhost:5432/tokobapak
-
-# Redis
-REDIS_URL=redis://localhost:6379
-
-# External Services
-MIDTRANS_SERVER_KEY=your-midtrans-key
-XENDIT_API_KEY=your-xendit-key
+# Frontend
+VITE_API_URL=http://localhost:8080
 ```
+
+Jangan pakai `NEXT_PUBLIC_API_URL`, `NEXTAUTH_SECRET`, `MIDTRANS_*`, `XENDIT_*` — sudah tidak ada di MVP.
 
 ---
 
 ## 🤝 Contributing
 
-Kami menyambut kontribusi dari siapa saja! Silakan baca [CONTRIBUTING.md](./CONTRIBUTING.md) untuk panduan.
-
-1. Fork repository
-2. Buat branch fitur (`git checkout -b feature/amazing-feature`)
-3. Commit perubahan (`git commit -m 'Add amazing feature'`)
-4. Push ke branch (`git push origin feature/amazing-feature`)
-5. Buat Pull Request
+1. Baca `AGENTS.md` + `CONTEXT.md` + 4 ADR sebelum coding
+2. Fork → branch `feat(scope): msg` (Conventional Commits)
+3. TDD: failing test dulu, `go test` + `go vet` + `playwright test` harus PASS
+4. Push → PR (no force-push ke protected)
 
 ---
 
 ## 📄 License
 
-Distributed under the MIT License. See [LICENSE](./LICENSE) for more information.
+MIT — lihat [LICENSE](./LICENSE)
 
 ---
 
 ## 📞 Contact
 
-- **Website:** [tokobapak.id](https://tokobapak.id)
-- **Email:** dev@tokobapak.id
-- **Twitter:** [@tokobapak](https://twitter.com/tokobapak)
-
----
+- **Docs:** `docs/product/PRD.md` + `docs/architecture/ARCHITECTURE.md`
+- **Infra:** `infrastructure/README.md` + `infrastructure/local/podman-compose.yml`
 
 <div align="center">
 
-Made with ❤️ by TokoBapak Team
+Made with ❤️ by TokoBapak Team — MVP 2026-08-26 · Go 1.27 · TanStack Start · PayU SNAP-BI
 
 </div>
