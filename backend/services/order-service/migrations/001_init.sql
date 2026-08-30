@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS orders (
     user_id UUID NOT NULL,
     status TEXT NOT NULL CHECK (status IN ('PENDING','RESERVED','PAID','SHIPPED','DELIVERED','CANCELLED')),
     total BIGINT NOT NULL,
+    idempotency_key TEXT UNIQUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

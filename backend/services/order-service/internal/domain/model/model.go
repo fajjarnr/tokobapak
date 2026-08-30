@@ -14,12 +14,13 @@ const (
 )
 
 type Order struct {
-	ID        string      `json:"id"`
-	UserID    string      `json:"user_id"`
-	Status    OrderStatus `json:"status"`
-	Total     int64       `json:"total"`
-	CreatedAt time.Time   `json:"created_at"`
-	UpdatedAt time.Time   `json:"updated_at"`
+	ID             string      `json:"id"`
+	UserID         string      `json:"user_id"`
+	Status         OrderStatus `json:"status"`
+	Total          int64       `json:"total"`
+	IdempotencyKey string      `json:"idempotency_key,omitempty"`
+	CreatedAt      time.Time   `json:"created_at"`
+	UpdatedAt      time.Time   `json:"updated_at"`
 }
 
 type OrderItem struct {

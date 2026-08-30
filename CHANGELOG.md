@@ -76,6 +76,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **T7.1 payu_client SNAP-BI real**: `payu_client.go` `Sign` legacy SHA256 hex → `hashBody`+`SignForB2B` `POST:/v1.0/access-token/b2b:ts:hex(sha256(body)) HMAC-SHA512 Base64` + `SignWithToken` `POST:/v1.0/transfer-va/payment:token:hex(sha256(body)):ts HMAC-SHA512 Base64` sesuai `SnapBiSignatureService.java:22`, `getAccessToken` `POST /v1.0/access-token/b2b {X-CLIENT-KEY,X-TIMESTAMP,X-SIGNATURE}` → Bearer token, `CreateTransaction` `POST /v1.0/transfer-va/payment {Authorization Bearer, X-TIMESTAMP, X-SIGNATURE, X-EXTERNAL-ID}` body `partnerReferenceNo,amount{value,currency},sourceAccountNo,beneficiaryAccountNo`, fallback mock `payu-ref-` on error for local dev, `VerifyCallbackSignature` now tries SHA512 then legacy. `podman-compose.yml` `PAYU_BASE_URL→payu-partner-service:8080` + `PAYU_CLIENT_KEY/_ID` + `PAYU_SOURCE/BENEFICIARY_ACCOUNT` + `payu-network` external.
 
+## [0.4.1] - 2026-08-30 — T7.2 order Saga minimal
+
+### Added
+- **T7.2 order-service Saga**: `migrations/001_init.sql` tambah `idempotency_key TEXT UNIQUE`, `domain/model.Order{IdempotencyKey}`, `port.OrderRepository{GetByIdempotencyKey}`, `postgres.Create` TX `INSERT orders(PENDING)+order_items+outbox tokobapak.order.created.v1` + `GetByIdempotencyKey` + `UpdateStatus FOR UPDATE`, `service.CreateOrder` `X-Idempotency-Key` wajib→check existing→ReserveStock `Qty>0`→total `sum(price*qty)` default 50000→INSERT PENDING+T X, `handler POST /v1/orders` 400 jika tanpa `X-Idempotency-Key` / `items empty` → 201 `{id,total,status}` + `GET /v1/orders/{id}`, `main.go` wiring `pgxpool+kafka Writer+OutboxPoller.Start` `brokers` `kafka:29092`, `handler_test TestCreateOrderHandler` 4 case PASS (no idem 400, valid 201 total 100000, replay same idem 200 same ID, GET 200).
+
 ## [0.2.1] - 2026-08-29 — Validation
 
 
