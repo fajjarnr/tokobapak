@@ -9,12 +9,12 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      '/api/v1/products': { target: 'http://localhost:3001', changeOrigin: true, rewrite: (p) => p.replace(/^\/api/, '') },
+      '/api/v1/products': { target: 'http://localhost:3101', changeOrigin: true, rewrite: (p) => p.replace(/^\/api/, '') },
       '/api/v1/payments': { target: 'http://localhost:3005', changeOrigin: true, rewrite: (p) => p.replace(/^\/api/, '') },
       '/api/v1/orders': { target: 'http://localhost:3004', changeOrigin: true, rewrite: (p) => p.replace(/^\/api/, '') },
       '/api/v1/cart': { target: 'http://localhost:3003', changeOrigin: true, rewrite: (p) => p.replace(/^\/api/, '') },
       '/api/v1/shipping': { target: 'http://localhost:3008', changeOrigin: true, rewrite: (p) => p.replace(/^\/api/, '') },
-      '/v1/products': { target: 'http://localhost:3001', changeOrigin: true },
+      '/v1/products': { target: 'http://localhost:3101', changeOrigin: true },
       '/v1/payments': { target: 'http://localhost:3005', changeOrigin: true },
       '/v1/orders': { target: 'http://localhost:3004', changeOrigin: true },
       '/v1/cart': { target: 'http://localhost:3003', changeOrigin: true },

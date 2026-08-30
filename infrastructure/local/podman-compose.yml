@@ -15,7 +15,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: tokobapak
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -44,7 +44,7 @@ services:
     container_name: tokobapak-kafka
     restart: always
     ports:
-      - "9092:9092"
+      - "9093:9092"
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
@@ -129,7 +129,7 @@ services:
     container_name: tokobapak-product-service
     restart: always
     ports:
-      - "3001:3001"
+      - "3101:3001"
     environment:
       - PORT=3001
       - DB_HOST=postgres
@@ -173,12 +173,13 @@ services:
       - DB_USERNAME=postgres
       - DB_PASSWORD=postgres
       - DB_NAME=tokobapak_orders
-      - KAFKA_BROKERS=kafka:29092
+      - KAFKA_BROKERS=payu-kafka:9092
     depends_on:
       postgres:
         condition: service_healthy
-      kafka:
-        condition: service_healthy
+    networks:
+      - default
+      - payu-network
 
   payment-service:
     build:
@@ -195,17 +196,15 @@ services:
       - DB_USERNAME=postgres
       - DB_PASSWORD=postgres
       - DB_NAME=tokobapak_payments
-      - KAFKA_BROKERS=kafka:29092
+      - KAFKA_BROKERS=payu-kafka:9092
       - PAYU_BASE_URL=${PAYU_BASE_URL:-http://payu-partner-service:8080}
-      - PAYU_HMAC_SECRET=${PAYU_HMAC_SECRET:-dev-secret}
+      - PAYU_HMAC_SECRET=${PAYU_HMAC_SECRET:-tokobapak-mvp-dev-secret-32chars-long!}
       - PAYU_CLIENT_KEY=${PAYU_CLIENT_KEY:-tokobapak-mvp}
       - PAYU_CLIENT_ID=${PAYU_CLIENT_ID:-tokobapak-mvp}
       - PAYU_SOURCE_ACCOUNT=${PAYU_SOURCE_ACCOUNT:-ACC_TOKOBAPAK_ESCROW}
       - PAYU_BENEFICIARY_ACCOUNT=${PAYU_BENEFICIARY_ACCOUNT:-ACC_SELLER_001}
     depends_on:
       postgres:
-        condition: service_healthy
-      kafka:
         condition: service_healthy
     networks:
       - default
@@ -225,12 +224,13 @@ services:
       - DB_USERNAME=postgres
       - DB_PASSWORD=postgres
       - DB_NAME=tokobapak_shipping
-      - KAFKA_BROKERS=kafka:29092
+      - KAFKA_BROKERS=payu-kafka:9092
     depends_on:
       postgres:
         condition: service_healthy
-      kafka:
-        condition: service_healthy
+    networks:
+      - default
+      - payu-network
 
   search-service:
     build:
@@ -257,10 +257,10 @@ services:
       - "3009:3009"
     environment:
       - PORT=3009
-      - KAFKA_BROKERS=kafka:29092
-    depends_on:
-      kafka:
-        condition: service_healthy
+      - KAFKA_BROKERS=payu-kafka:9092
+    networks:
+      - default
+      - payu-network
 
   # Traefik Ingress (local sim ALB→Traefik; cloud ALB→Traefik di EKS)
   traefik:
@@ -268,8 +268,8 @@ services:
     container_name: tokobapak-traefik
     restart: always
     ports:
-      - "8080:80"
-      - "8081:8080"
+      - "8082:80"
+      - "8083:8080"
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
