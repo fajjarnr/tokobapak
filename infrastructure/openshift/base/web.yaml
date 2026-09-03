@@ -1,0 +1,60 @@
+# Web TanStack Start (nginx:alpine, USER 1001). VITE_API_URL dibake saat build image.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: web
+  namespace: tokobapak-dev
+  labels: {app.kubernetes.io/name: web, app.kubernetes.io/part-of: tokobapak}
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: tokobapak-dev
+  labels: {app.kubernetes.io/name: web, app.kubernetes.io/part-of: tokobapak}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: web}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: web, app.kubernetes.io/part-of: tokobapak}
+    spec:
+      securityContext: {runAsNonRoot: true}
+      serviceAccountName: web
+      volumes:
+        - {name: tmp, emptyDir: {}}
+        - {name: cache, emptyDir: {}}
+        - {name: run, emptyDir: {}}
+      containers:
+        - name: app
+          image: image-registry.openshift-image-registry.svc:5000/tokobapak-dev/web:latest
+          imagePullPolicy: Always
+          ports:
+            - {containerPort: 8080, name: http}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities: {drop: [ALL]}
+            seccompProfile: {type: RuntimeDefault}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+            - {name: cache, mountPath: /var/cache/nginx}
+            - {name: run, mountPath: /var/run}
+          readinessProbe: {tcpSocket: {port: 8080}, initialDelaySeconds: 10, periodSeconds: 10}
+          livenessProbe: {tcpSocket: {port: 8080}, initialDelaySeconds: 20, periodSeconds: 15}
+          resources: {requests: {cpu: 25m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  namespace: tokobapak-dev
+  labels: {app.kubernetes.io/name: web, app.kubernetes.io/part-of: tokobapak}
+spec:
+  type: ClusterIP
+  selector: {app.kubernetes.io/name: web}
+  ports:
+    - {port: 80, targetPort: 8080, name: http}

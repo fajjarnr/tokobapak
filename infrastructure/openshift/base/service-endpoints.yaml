@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: service-endpoints
+  namespace: tokobapak-dev
+  labels:
+    app.kubernetes.io/name: service-endpoints
+    app.kubernetes.io/part-of: tokobapak
+data:
+  # Infra lokal namespace (hemat: 1 CNPG instance, redis emptyDir, ES single-node)
+  POSTGRES_HOST: "tokobapak-db-rw"
+  POSTGRES_PORT: "5432"
+  REDIS_HOST: "tokobapak-redis"
+  REDIS_PORT: "6379"
+  REDIS_TTL_SECONDS: "604800"
+  ELASTICSEARCH_NODE: "http://tokobapak-elasticsearch:9200"
+  # Infra sharing cluster PayU (hemat: tanpa broker sendiri)
+  # ponytail: FQDN cross-namespace, bukan short-name — short-name hanya resolve intra-ns
+  KAFKA_BROKERS: "payu-kafka-kafka-bootstrap.payu-dev.svc.cluster.local:9092"
+  PAYU_BASE_URL: "http://partner-service.payu-dev.svc.cluster.local:8080"
+  # Service URLs intra-namespace
+  AUTH_SERVICE_URL: "http://auth-service"
+  USER_SERVICE_URL: "http://user-service"
+  PRODUCT_SERVICE_URL: "http://product-service"
+  CART_SERVICE_URL: "http://cart-service"
+  ORDER_SERVICE_URL: "http://order-service"
+  PAYMENT_SERVICE_URL: "http://payment-service"
+  SHIPPING_SERVICE_URL: "http://shipping-service"
+  SEARCH_SERVICE_URL: "http://search-service"
+  NOTIFICATION_SERVICE_URL: "http://notification-service"

@@ -1,0 +1,18 @@
+# Hemat budget: kuota kecil utk 10 svc replika-1 + CNPG 1 instance di 3-worker cluster.
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: tokobapak-dev-quota
+  namespace: tokobapak-dev
+spec:
+  hard:
+    requests.cpu: "4"
+    requests.memory: 8Gi
+    limits.cpu: "12"
+    limits.memory: 16Gi
+    persistentvolumeclaims: "5"
+    requests.storage: 20Gi
+    pods: "30"
+    services: "20"
+    secrets: "30"
+    configmaps: "20"

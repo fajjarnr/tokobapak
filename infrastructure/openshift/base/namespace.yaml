@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tokobapak-dev
+  labels:
+    app.kubernetes.io/part-of: tokobapak
+    tokobapak.io/environment: dev
+    tokobapak.io/managed-by: platform-team
+    tokobapak.io/tier: non-production
+    # shared-ingress router hanya melayani ns berlabel ini (hemat: tanpa ingress sendiri)
+    payu.fajjjar.my.id/ingress: shared
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted

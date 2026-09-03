@@ -1,0 +1,85 @@
+# Route lewat shared-ingress (domain apps.fajjjar.my.id). Tanpa Traefik pod — hemat 1 pod.
+# TLS edge + redirect insecure, pola sama dgn web-app payu-dev.
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: web
+  namespace: tokobapak-dev
+  labels: {app.kubernetes.io/name: web, app.kubernetes.io/part-of: tokobapak}
+spec:
+  host: web-tokobapak-dev.apps.fajjjar.my.id
+  to: {kind: Service, name: web}
+  port: {targetPort: http}
+  tls: {termination: edge, insecureEdgeTerminationPolicy: Redirect}
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: product-service
+  namespace: tokobapak-dev
+  labels: {app.kubernetes.io/name: product-service, app.kubernetes.io/part-of: tokobapak}
+spec:
+  host: product-tokobapak-dev.apps.fajjjar.my.id
+  to: {kind: Service, name: product-service}
+  port: {targetPort: http}
+  tls: {termination: edge, insecureEdgeTerminationPolicy: Redirect}
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: auth-service
+  namespace: tokobapak-dev
+  labels: {app.kubernetes.io/name: auth-service, app.kubernetes.io/part-of: tokobapak}
+spec:
+  host: auth-tokobapak-dev.apps.fajjjar.my.id
+  to: {kind: Service, name: auth-service}
+  port: {targetPort: http}
+  tls: {termination: edge, insecureEdgeTerminationPolicy: Redirect}
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: order-service
+  namespace: tokobapak-dev
+  labels: {app.kubernetes.io/name: order-service, app.kubernetes.io/part-of: tokobapak}
+spec:
+  host: order-tokobapak-dev.apps.fajjjar.my.id
+  to: {kind: Service, name: order-service}
+  port: {targetPort: http}
+  tls: {termination: edge, insecureEdgeTerminationPolicy: Redirect}
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: payment-service
+  namespace: tokobapak-dev
+  labels: {app.kubernetes.io/name: payment-service, app.kubernetes.io/part-of: tokobapak}
+spec:
+  host: payment-tokobapak-dev.apps.fajjjar.my.id
+  to: {kind: Service, name: payment-service}
+  port: {targetPort: http}
+  tls: {termination: edge, insecureEdgeTerminationPolicy: Redirect}
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: cart-service
+  namespace: tokobapak-dev
+  labels: {app.kubernetes.io/name: cart-service, app.kubernetes.io/part-of: tokobapak}
+spec:
+  host: cart-tokobapak-dev.apps.fajjjar.my.id
+  to: {kind: Service, name: cart-service}
+  port: {targetPort: http}
+  tls: {termination: edge, insecureEdgeTerminationPolicy: Redirect}
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: search-service
+  namespace: tokobapak-dev
+  labels: {app.kubernetes.io/name: search-service, app.kubernetes.io/part-of: tokobapak}
+spec:
+  host: search-tokobapak-dev.apps.fajjjar.my.id
+  to: {kind: Service, name: search-service}
+  port: {targetPort: http}
+  tls: {termination: edge, insecureEdgeTerminationPolicy: Redirect}

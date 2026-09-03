@@ -1,0 +1,186 @@
+# Infra hemat: 1 CNPG instance 5Gi + redis emptyDir (tanpa PVC) + ES single-node emptyDir.
+# ponytail: tanpa replikasi/PVC infra — data dev hilang saat pod mati; tambah instances+storage saat naik ke sit
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: tokobapak-db
+  namespace: tokobapak-dev
+  labels:
+    app.kubernetes.io/name: tokobapak-db
+    app.kubernetes.io/part-of: tokobapak
+spec:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:18
+  storage:
+    size: 5Gi
+    storageClass: gp3-csi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+  bootstrap:
+    initdb:
+      database: tokobapak_users
+      postInitSQL:
+        - CREATE DATABASE tokobapak_products
+        - CREATE DATABASE tokobapak_orders
+        - CREATE DATABASE tokobapak_payments
+        - CREATE DATABASE tokobapak_shipping
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tokobapak-redis
+  namespace: tokobapak-dev
+  labels:
+    app.kubernetes.io/name: tokobapak-redis
+    app.kubernetes.io/part-of: tokobapak
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tokobapak-redis
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: tokobapak-redis
+        app.kubernetes.io/part-of: tokobapak
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: tokobapak-redis
+      containers:
+        - name: redis
+          image: docker.io/library/redis:alpine
+          ports:
+            - containerPort: 6379
+              name: redis
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 300m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tokobapak-redis
+  namespace: tokobapak-dev
+  labels:
+    app.kubernetes.io/name: tokobapak-redis
+    app.kubernetes.io/part-of: tokobapak
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tokobapak-redis
+  namespace: tokobapak-dev
+  labels:
+    app.kubernetes.io/name: tokobapak-redis
+    app.kubernetes.io/part-of: tokobapak
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: tokobapak-redis
+  ports:
+    - port: 6379
+      targetPort: 6379
+      name: redis
+---
+# Search index `products`. Kandidat pertama untuk dimatikan bila kuota menipis (scale 0 + search-service ikut 0).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tokobapak-elasticsearch
+  namespace: tokobapak-dev
+  labels:
+    app.kubernetes.io/name: tokobapak-elasticsearch
+    app.kubernetes.io/part-of: tokobapak
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tokobapak-elasticsearch
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: tokobapak-elasticsearch
+        app.kubernetes.io/part-of: tokobapak
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: tokobapak-elasticsearch
+      containers:
+        - name: elasticsearch
+          image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
+          ports:
+            - containerPort: 9200
+              name: http
+          env:
+            - name: discovery.type
+              value: single-node
+            - name: xpack.security.enabled
+              value: "false"
+            - name: ES_JAVA_OPTS
+              value: -Xms512m -Xmx512m
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 250m
+              memory: 768Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tokobapak-elasticsearch
+  namespace: tokobapak-dev
+  labels:
+    app.kubernetes.io/name: tokobapak-elasticsearch
+    app.kubernetes.io/part-of: tokobapak
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tokobapak-elasticsearch
+  namespace: tokobapak-dev
+  labels:
+    app.kubernetes.io/name: tokobapak-elasticsearch
+    app.kubernetes.io/part-of: tokobapak
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: tokobapak-elasticsearch
+  ports:
+    - port: 9200
+      targetPort: 9200
+      name: http

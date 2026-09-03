@@ -1,0 +1,32 @@
+# Overlay cluster PayU (api.payu.ocp.fajjjar.my.id) — namespace tokobapak-dev, beda dari payu-*.
+# Apply: oc apply -k infrastructure/openshift/overlays/payu-dev
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: tokobapak-dev
+resources:
+  - ../../base
+# ponytail: replika 1 + tag latest utk dev; HPA/PDB menyusul saat traffic nyata
+replicas:
+  - {name: auth-service, count: 1}
+  - {name: user-service, count: 1}
+  - {name: product-service, count: 1}
+  - {name: cart-service, count: 1}
+  - {name: order-service, count: 1}
+  - {name: payment-service, count: 1}
+  - {name: shipping-service, count: 1}
+  - {name: search-service, count: 1}
+  - {name: notification-service, count: 1}
+  - {name: web, count: 1}
+  - {name: tokobapak-redis, count: 1}
+  - {name: tokobapak-elasticsearch, count: 1}
+images:
+  - {name: image-registry.openshift-image-registry.svc:5000/tokobapak-dev/auth-service, newTag: latest}
+  - {name: image-registry.openshift-image-registry.svc:5000/tokobapak-dev/user-service, newTag: latest}
+  - {name: image-registry.openshift-image-registry.svc:5000/tokobapak-dev/product-service, newTag: latest}
+  - {name: image-registry.openshift-image-registry.svc:5000/tokobapak-dev/cart-service, newTag: latest}
+  - {name: image-registry.openshift-image-registry.svc:5000/tokobapak-dev/order-service, newTag: latest}
+  - {name: image-registry.openshift-image-registry.svc:5000/tokobapak-dev/payment-service, newTag: latest}
+  - {name: image-registry.openshift-image-registry.svc:5000/tokobapak-dev/shipping-service, newTag: latest}
+  - {name: image-registry.openshift-image-registry.svc:5000/tokobapak-dev/search-service, newTag: latest}
+  - {name: image-registry.openshift-image-registry.svc:5000/tokobapak-dev/notification-service, newTag: latest}
+  - {name: image-registry.openshift-image-registry.svc:5000/tokobapak-dev/web, newTag: latest}
