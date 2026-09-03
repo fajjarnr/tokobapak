@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Live PayU di OpenShift (tokobapak-dev)**: 9 service + web `1/1 Running`, CNPG `tokobapak-db`, redis, elasticsearch; Kafka topics di shared `payu-kafka` (`order.created`, `payment.completed`, `shipment.created`, `product.updated` + DLQ, 1 partisi/3 replika). Bukti E2E: order `Rp100.000` → `POST /v1/payments` → `payu_reference PAYU-d897…` → callback HMAC 200 → `COMPLETED` → outbox `0` (event di Kafka).
+- **Konsumen notifikasi**: `notification-service` consume `payment.completed` + `shipment.created` (group `tokobapak-notification`, poison → DLQ, sink log sampai provider email/WA dipilih). Bukti live: `notif ... status=COMPLETED` untuk semua flow E2E.
 - **Web via route publik**: `web-tokobapak-dev.apps.fajjjar.my.id` 200; nginx proxy per-path `/api/v1/{products,orders,payments}` ke service pemilik (tanpa gateway di MVP).
 
 ### Fixed

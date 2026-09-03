@@ -13,6 +13,7 @@
 - **`.gitignore` `**/cmd/**/server`**: menelan `main.go` baru (cocok direktori `server/`). Sempitkan ke file binary.
 - **nginx `api-gateway` hantu**: MVP tanpa gateway; proxy per-path ke service pemilik.
 - **Kustomize namespace transformer vs Strimzi**: `KafkaTopic` harus di namespace Kafka — kelola via `oc apply -f` terpisah, bukan `apply -k`.
+- **Konsumen stub**: `notification-service` hanya `/health` sementara event menumpuk tak terkonsumsi. Konsumen minimal (fetch+commit, poison → DLQ, sink log) menutup rantai; provider email/WA keputusan produk, bukan teknis.
 
 ## 2026-08-29 Phase 0-4
 
