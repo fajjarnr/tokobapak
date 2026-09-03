@@ -168,17 +168,17 @@ func (c *Client) getAccessToken(ctx context.Context) (string, error) {
 }
 
 // CreateTransaction creates a PayU SNAP-BI payment for orderID.
+// Fail-fast: any transport/token/business error returns error, never a mock reference.
 func (c *Client) CreateTransaction(ctx context.Context, orderID string, amount int64, idempotencyKey string) (string, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
 	if c.baseURL == "" {
-		return "payu-ref-" + orderID, nil
+		return "", fmt.Errorf("payu baseURL empty")
 	}
 	token, err := c.getAccessToken(ctx)
 	if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "payu token fallback mock for %s: %v\n", orderID, err)
-		return "payu-ref-" + orderID, nil
+		return "", err
 	}
 	sourceAcc := os.Getenv("PAYU_SOURCE_ACCOUNT")
 	if sourceAcc == "" {
@@ -214,30 +214,32 @@ func (c *Client) CreateTransaction(ctx context.Context, orderID string, amount i
 
 	resp, err := c.http.Do(req)
 	if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "payu payment fallback mock for %s: %v\n", orderID, err)
-		return "payu-ref-" + orderID, nil
+		return "", err
 	}
 	defer resp.Body.Close()
 	b, _ := io.ReadAll(resp.Body)
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		var out map[string]interface{}
-		if err := json.Unmarshal(b, &out); err == nil {
-			if ref, ok := out["payuReferenceNo"].(string); ok && ref != "" {
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return "", fmt.Errorf("payu error %d: %s", resp.StatusCode, string(b))
+	}
+	var out map[string]interface{}
+	if err := json.Unmarshal(b, &out); err != nil {
+		return "", fmt.Errorf("payu bad response: %v: %s", err, string(b))
+	}
+	// PayU returns HTTP 200 for business errors; responseCode 2002500 = success.
+	if code, _ := out["responseCode"].(string); code != "" && code != "2002500" {
+		return "", fmt.Errorf("payu business error %s: %s", code, string(b))
+	}
+	for _, k := range []string{"referenceNo", "payuReferenceNo", "payuReference"} {
+		if ref, ok := out[k].(string); ok && ref != "" {
+			return ref, nil
+		}
+	}
+	if data, ok := out["data"].(map[string]interface{}); ok {
+		for _, k := range []string{"referenceNo", "payuReferenceNo", "payuReference"} {
+			if ref, ok := data[k].(string); ok && ref != "" {
 				return ref, nil
-			}
-			if ref, ok := out["payuReference"].(string); ok && ref != "" {
-				return ref, nil
-			}
-			if ref, ok := out["referenceNo"].(string); ok && ref != "" {
-				return ref, nil
-			}
-			if data, ok := out["data"].(map[string]interface{}); ok {
-				if ref, ok := data["payuReferenceNo"].(string); ok && ref != "" {
-					return ref, nil
-				}
 			}
 		}
-		return "payu-ref-" + orderID, nil
 	}
-	return "", fmt.Errorf("payu error %d: %s", resp.StatusCode, string(b))
+	return "", fmt.Errorf("payu missing reference: %s", string(b))
 }

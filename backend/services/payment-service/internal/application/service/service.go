@@ -16,9 +16,13 @@ type PaymentRepository interface {
 }
 
 type Service struct {
-	repo       PaymentRepository
-	payuClient *payu.Client
+	repo           PaymentRepository
+	payuClient     *payu.Client
+	orderValidator OrderValidator
 }
+
+// OrderValidator returns order total; ErrNotFound if missing. Hexagonal port boundary.
+type OrderValidator func(ctx context.Context, orderID string) (int64, error)
 
 func NewService(repo PaymentRepository, payuClient *payu.Client) *Service {
 	return &Service{repo: repo, payuClient: payuClient}
@@ -26,19 +30,22 @@ func NewService(repo PaymentRepository, payuClient *payu.Client) *Service {
 
 func NewServiceNoPayU(repo PaymentRepository) *Service { return &Service{repo: repo} }
 
+func (s *Service) WithOrderValidator(v OrderValidator) *Service { s.orderValidator = v; return s }
+
 func (s *Service) Health(ctx context.Context) string { return "ok:payment-service" }
 
 func (s *Service) CreatePayment(ctx context.Context, orderID string, amount int64, idempotencyKey string) (*model.Payment, error) {
 	if orderID == "" || amount <= 0 || idempotencyKey == "" {
 		return nil, model.ErrBadRequest
 	}
-	// T7.5 business validation: check order exists and amount matches
-	if orderID == "fake" || orderID == "fake-order-id" {
-		return nil, model.ErrNotFound
-	}
-	// amount mismatch simulation: if amount is 1 or 999 treat as mismatch → 400
-	if amount == 1 || amount == 999 {
-		return nil, model.ErrBadRequest
+	if s.orderValidator != nil {
+		total, err := s.orderValidator(ctx, orderID)
+		if err != nil {
+			return nil, model.ErrNotFound
+		}
+		if total != amount {
+			return nil, model.ErrBadRequest
+		}
 	}
 	if s.repo != nil {
 		if existing, err := s.repo.GetByIdempotencyKey(ctx, idempotencyKey); err == nil && existing != nil {

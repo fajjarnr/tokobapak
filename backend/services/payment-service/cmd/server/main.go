@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tokobapak/payment-service/config"
 	httpAdapter "github.com/tokobapak/payment-service/internal/adapter/http"
+	"github.com/tokobapak/payment-service/internal/adapter/client/order"
 	"github.com/tokobapak/payment-service/internal/adapter/client/payu"
 	"github.com/tokobapak/payment-service/internal/adapter/kafka"
 	pgAdapter "github.com/tokobapak/payment-service/internal/adapter/postgres"
@@ -31,7 +32,7 @@ func main() {
 		payuURL = os.Getenv("PAYU_GATEWAY_URL")
 	}
 	if payuURL == "" {
-		payuURL = "http://payu-gateway:8080"
+		payuURL = "http://partner-service.payu-dev.svc.cluster.local:8080"
 	}
 	payuSecret := os.Getenv("PAYU_SECRET")
 	if payuSecret == "" {
@@ -41,6 +42,7 @@ func main() {
 		payuSecret = "dev-secret"
 	}
 	payuClient := payu.New(payuURL, payuSecret)
+	orderClient := order.New(os.Getenv("ORDER_SERVICE_URL"))
 	dsn := "postgres://" + cfg.DBUser + ":" + cfg.DBPassword + "@" + cfg.DBHost + ":" + cfg.DBPort + "/" + cfg.DBName + "?sslmode=disable"
 	pool, err := pgxpool.New(context.Background(), dsn)
 	if err != nil {
@@ -61,7 +63,7 @@ func main() {
 		log.Printf("connected to DB %s payu %s", cfg.DBName, payuURL)
 	}
 	repo := pgAdapter.New(pool)
-	svc := service.NewService(repo, payuClient)
+	svc := service.NewService(repo, payuClient).WithOrderValidator(orderClient.Total)
 	// start outbox poller
 	brokers := strings.Split(cfg.KafkaBrokers, ",")
 	poller := kafka.NewOutboxPoller(pool, brokers)

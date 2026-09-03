@@ -67,8 +67,8 @@ target/
 *.test
 *.prof
 vendor/
-# Compiled binaries
-**/cmd/**/server
+# Compiled binaries (file named `server` only — must not match main.go)
+**/cmd/server/server
 
 
 # ------------------------------------------------------------------------------
