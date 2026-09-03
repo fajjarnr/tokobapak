@@ -12,22 +12,29 @@ const TopicPaymentCompleted = "tokobapak.payment.completed.v1"
 
 type Consumer struct {
 	reader *kafka.Reader
+	dlq    *kafka.Writer
 }
 
 func NewConsumer(brokers []string, topic, groupID string) *Consumer {
-	return &Consumer{reader: kafka.NewReader(kafka.ReaderConfig{Brokers: brokers, Topic: topic, GroupID: groupID})}
+	return &Consumer{
+		reader: kafka.NewReader(kafka.ReaderConfig{Brokers: brokers, Topic: topic, GroupID: groupID}),
+		dlq:    &kafka.Writer{Addr: kafka.TCP(brokers...), Balancer: &kafka.LeastBytes{}},
+	}
 }
 
 func (c *Consumer) Consume(ctx context.Context, handler func(topic string, payload []byte) error) error {
 	for {
 		m, err := c.reader.FetchMessage(ctx)
 		if err != nil {
-			if ctx.Err() != nil { return ctx.Err() }
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
 			time.Sleep(time.Second)
 			continue
 		}
 		if err := handler(m.Topic, m.Value); err != nil {
-			// on fail, could publish to .dlq
+			// Poison message: park in DLQ, commit to avoid blocking the partition.
+			_ = c.dlq.WriteMessages(ctx, kafka.Message{Topic: m.Topic + ".dlq", Value: m.Value})
 		}
 		_ = c.reader.CommitMessages(ctx, m)
 	}
