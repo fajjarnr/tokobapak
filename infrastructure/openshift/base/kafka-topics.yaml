@@ -1,0 +1,110 @@
+# Standalone: oc apply -f kafka-topics.yaml (NOT via kustomize — the overlay
+# namespace transformer would move these into tokobapak-dev, but Strimzi
+# only reconciles KafkaTopics in the Kafka namespace payu-dev).
+# TokoBapak Kafka topics on the shared payu-kafka cluster (no broker of our own).
+# Strimzi disables auto-creation, so the outbox pollers block until these exist.
+# Single partition preserves per-topic ordering (payment/callback sequencing);
+# replicas 3 for durability. Must live in payu-dev (Kafka namespace).
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: tokobapak.order.created.v1
+  namespace: payu-dev
+  labels:
+    app.kubernetes.io/part-of: tokobapak
+    strimzi.io/cluster: payu-kafka
+spec:
+  partitions: 1
+  replicas: 3
+  config: {cleanup.policy: delete, retention.ms: 604800000}
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: tokobapak.order.created.v1.dlq
+  namespace: payu-dev
+  labels:
+    app.kubernetes.io/part-of: tokobapak
+    strimzi.io/cluster: payu-kafka
+spec:
+  partitions: 1
+  replicas: 3
+  config: {cleanup.policy: delete, retention.ms: 604800000}
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: tokobapak.payment.completed.v1
+  namespace: payu-dev
+  labels:
+    app.kubernetes.io/part-of: tokobapak
+    strimzi.io/cluster: payu-kafka
+spec:
+  partitions: 1
+  replicas: 3
+  config: {cleanup.policy: delete, retention.ms: 604800000}
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: tokobapak.payment.completed.v1.dlq
+  namespace: payu-dev
+  labels:
+    app.kubernetes.io/part-of: tokobapak
+    strimzi.io/cluster: payu-kafka
+spec:
+  partitions: 1
+  replicas: 3
+  config: {cleanup.policy: delete, retention.ms: 604800000}
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: tokobapak.shipment.created.v1
+  namespace: payu-dev
+  labels:
+    app.kubernetes.io/part-of: tokobapak
+    strimzi.io/cluster: payu-kafka
+spec:
+  partitions: 1
+  replicas: 3
+  config: {cleanup.policy: delete, retention.ms: 604800000}
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: tokobapak.shipment.created.v1.dlq
+  namespace: payu-dev
+  labels:
+    app.kubernetes.io/part-of: tokobapak
+    strimzi.io/cluster: payu-kafka
+spec:
+  partitions: 1
+  replicas: 3
+  config: {cleanup.policy: delete, retention.ms: 604800000}
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: tokobapak.product.updated.v1
+  namespace: payu-dev
+  labels:
+    app.kubernetes.io/part-of: tokobapak
+    strimzi.io/cluster: payu-kafka
+spec:
+  partitions: 1
+  replicas: 3
+  config: {cleanup.policy: delete, retention.ms: 604800000}
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: tokobapak.product.updated.v1.dlq
+  namespace: payu-dev
+  labels:
+    app.kubernetes.io/part-of: tokobapak
+    strimzi.io/cluster: payu-kafka
+spec:
+  partitions: 1
+  replicas: 3
+  config: {cleanup.policy: delete, retention.ms: 604800000}
