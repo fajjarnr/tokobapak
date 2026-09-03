@@ -1,5 +1,19 @@
 # LESSONS — TokoBapak MVP
 
+## 2026-09-03 Live PayU di OpenShift (tokobapak-dev)
+
+### What worked
+- **Fail-fast uang**: hapus `payu-ref-*` fallback — 401 PayU langsung terlihat (`Invalid Client Key`), bukan order "berhasil" palsu. Uang tidak boleh punya mode diam-diam-mock.
+- **Bukti sebelum klaim**: `TODOS` bilang "SUDAH BISA BAYAR" dari test lokal; live buktikan 4 lapis bocor (NetworkPolicy, RLS, secret, JWKS). E2E = cluster, bukan compose.
+- **Strimzi tanpa auto-create**: topik eksplisit per manifest; poller yang diam = topik belum ada, bukan Kafka mati.
+
+### What failed
+- **Env mismatch `DB_USER` vs `DB_USERNAME`**: kode baca `DB_USER`, manifest set `DB_USERNAME` → default `postgres` → `SASL auth failed`. Kontrak nama env dicek saat deploy, bukan saat coding.
+- **Secret CNPG yang tidak ada**: manifest referensi `tokobapak-db-superuser`; CNPG hanya buat `tokobapak-db-app` tanpa `enableSuperuserAccess` → `CreateContainerConfigError`.
+- **`.gitignore` `**/cmd/**/server`**: menelan `main.go` baru (cocok direktori `server/`). Sempitkan ke file binary.
+- **nginx `api-gateway` hantu**: MVP tanpa gateway; proxy per-path ke service pemilik.
+- **Kustomize namespace transformer vs Strimzi**: `KafkaTopic` harus di namespace Kafka — kelola via `oc apply -f` terpisah, bukan `apply -k`.
+
 ## 2026-08-29 Phase 0-4
 
 ### What worked

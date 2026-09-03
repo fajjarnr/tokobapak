@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.0] - 2026-09-03
+
+### Added
+- **Live PayU di OpenShift (tokobapak-dev)**: 9 service + web `1/1 Running`, CNPG `tokobapak-db`, redis, elasticsearch; Kafka topics di shared `payu-kafka` (`order.created`, `payment.completed`, `shipment.created`, `product.updated` + DLQ, 1 partisi/3 replika). Bukti E2E: order `Rp100.000` → `POST /v1/payments` → `payu_reference PAYU-d897…` → callback HMAC 200 → `COMPLETED` → outbox `0` (event di Kafka).
+- **Web via route publik**: `web-tokobapak-dev.apps.fajjjar.my.id` 200; nginx proxy per-path `/api/v1/{products,orders,payments}` ke service pemilik (tanpa gateway di MVP).
+
+### Fixed
+- **Adapter PayU fail-fast**: hapus fallback mock `payu-ref-*`; error transport/token/bisnis (`responseCode != 2002500`) kini error, bukan referensi palsu. Validasi order riil via `order-service` (`404` order hilang, `400` amount mismatch) ganti stub `fake/1/999`.
+- **Manifest dev**: `DB_USER` (kode baca `DB_USER`, manifest hanya set `DB_USERNAME`), secret CNPG `tokobapak-db-app` (superuser tidak ada), `routes.yaml` masuk kustomize, `ORDER_SERVICE_URL` + `PAYU_*` di payment-service, `cmd/server/main.go` untuk 5 service, `.gitignore` binary dipersempit agar `main.go` terlacak.
+- **PayU side (repo payu, PAYU-TB-006)**: `partner-service` 1.18.78 — SYSTEM-scoped pre-auth lookup (FORCE RLS sembunyikan semua partner → `4012502`), tenant scoping pasca-auth, `NetworkPolicy` tokobapak-dev → 8080, secret Keycloak disinkron, JWKS internal.
+
 ## [0.2.0] - 2026-08-29
 
 ### Added
